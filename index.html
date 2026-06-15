@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>幻想郷サバイバーズ！</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #05050a;
+            color: #fff;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        /* 📱 画面サイズに合わせて自動で大きく・ぴったりにする魔法のCSS */
+        .canvas-container {
+            position: relative;
+            display: none;
+            width: 95vw;
+            max-width: 960px;
+            aspect-ratio: 960 / 580;
+            margin: auto;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            border: 4px solid #ff4757;
+            background-color: #0b0c10;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.4);
+            box-sizing: border-box;
+        }
+
+        .menu-window {
+            background: rgba(15, 15, 25, 0.96);
+            border: 3px solid #ff4757;
+            padding: 25px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 450px;
+            width: 85%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            z-index: 20;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(10, 10, 20, 0.95);
+            color: #fff;
+            border: 4px solid #ff4757;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            width: 80%;
+            max-width: 320px;
+            z-index: 30;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+        .btn {
+            background: #1e1e30;
+            color: #ff4757;
+            border: 2px solid #ff4757;
+            padding: 12px 24px;
+            margin: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #ff4757; color: #fff; }
+        .btn:disabled { border-color: #444; color: #666; background: #111; cursor: not-allowed; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 15px 0; }
+        .card { 
+            border: 2px solid #2f3542; 
+            padding: 10px; 
+            background: #11121a; 
+            cursor: pointer; 
+            border-radius: 16px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .card.selected { border-color: #ff4757; background: #222536; box-shadow: 0 0 15px rgba(255, 71, 87, 0.3); }
+        .p-text { color: #ffcc00; font-weight: bold; font-size: 20px; }
+        #controls { margin-top: 15px; color: #a4b0be; font-size: 12px; text-align: center; line-height: 1.4; padding: 0 10px; }
+        
+        /* スマホ用タッチ検出レイヤー（キャンバスと完全に同じサイズに連動） */
+        #touch-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+        }
+
+        /* ⏸️ スマホ用一時停止ボタン */
+        #pause-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            width: 44px; height: 44px;
+            background: rgba(255, 71, 87, 0.2);
+            border: 2px solid #ff4757;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 15;
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- メインメニュー -->
+    <div id="mainMenu" class="menu-window">
+        <h1 style="color:#ff4757; margin-top:0; font-size: 26px; letter-spacing: 1px; text-shadow: 0 0 15px rgba(255,71,87,0.5);">☯️ 幻想郷サバイバーズ！ ☯️</h1>
+        <p style="margin: 5px 0;">集めたPアイテム: <span id="menuGold" class="p-text">0</span> 🔴</p>
+        
+        <h3 style="margin: 15px 0 5px 0;">【1】 自機キャラクター選択</h3>
+        <div class="grid">
+            <div class="card selected" id="char-reimu" onclick="selectChar('reimu')">
+                <h4 style="color:#ff4757; margin:2px 0; font-size:15px;">博麗 霊夢</h4>
+                <p style="font-size:11px; color:#a4b0be; margin:2px 0 0 0;">自動追尾する博麗札＆陰陽玉</p>
+            </div>
+            <div class="card" id="char-marisa" onclick="selectChar('marisa')">
+                <h4 style="color:#eccc68; margin:2px 0; font-size:15px;">霧雨 魔理沙</h4>
+                <p style="font-size:11px; color:#a4b0be; margin:2px 0 0 0;">進行方向へ広がる広角星弾幕</p>
+            </div>
+            <div class="card" id="char-youmu" onclick="selectChar('youmu')">
+                <h4 style="color:#2ed573; margin:2px 0; font-size:15px;">魂魄 妖夢</h4>
+                <p style="font-size:11px; color:#a4b0be; margin:2px 0 0 0;">周囲を薙ぎ払う楼観剣の旋回剣気</p>
+            </div>
+        </div>
+
+        <h3 style="margin: 15px 0 5px 0;">【2】 能力解放（永続強化）</h3>
+        <div style="font-size: 13px; background:#0b0c10; padding:12px; border-radius:14px; border:1px solid #2f3542;">
+            <div style="margin-bottom: 8px;">⚔️ 攻撃力 Lv.<span id="up-atk-lv">0</span> <button class="btn" style="padding:4px 10px; font-size:11px; margin-left:5px;" id="btn-up-atk" onclick="buyPermanent('atk')">消費: <span id="cost-atk">50</span>🔴</button></div>
+            <div>❤️ 体力倍率 Lv.<span id="up-hp-lv">0</span> <button class="btn" style="padding:4px 10px; font-size:11px; margin-left:5px;" id="btn-up-hp" onclick="buyPermanent('hp')">消費: <span id="cost-hp">50</span>🔴</button></div>
+        </div>
+
+        <button class="btn" style="font-size:18px; margin-top:20px; width:100%; border-color:#ff4757; background:#ff4757; color:#fff;" onclick="startGame()">異変解決へ向かう</button>
+    </div>
+
+    <!-- ゲームプレイ画面用コンテナ -->
+    <div id="gameContainer" class="canvas-container">
+        <canvas id="gameCanvas" width="960" height="580"></canvas>
+        <div id="touch-overlay"></div>
+        <div id="pause-btn" onclick="triggerPause()">⏸️</div>
+    </div>
+    
+    <!-- ポーズ/レベルアップ用UI層 -->
+    <div id="ui-layer">
+        <h2 id="ui-title" style="color:#ff4757; margin-top:0; font-size: 20px;">能力開花</h2>
+        <div id="ui-options" style="display:flex; flex-direction:column; width:100%;"></div>
+    </div>
+
+    <div id="controls">
+        【操作】 PC: WASD・矢印キー | スマホ: 画面ドラッグ移動 / ⏸️で中断
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameContainer = document.getElementById('gameContainer');
+const uiLayer = document.getElementById('ui-layer');
+const uiTitle = document.getElementById('ui-title');
+const uiOptions = document.getElementById('ui-options');
+const touchOverlay = document.getElementById('touch-overlay');
+
+// --- 👾 キャラ画像設定 ---
+const charImages = { reimu: new Image(), marisa: new Image(), youmu: new Image() };
+charImages.reimu.src = 'reimu.png';
+charImages.marisa.src = 'marisa.png';
+charImages.youmu.src = 'youmu.png';
+
+let imageLoaded = { reimu: false, marisa: false, youmu: false };
+charImages.reimu.onload = () => imageLoaded.reimu = true;
+charImages.marisa.onload = () => imageLoaded.marisa = true;
+charImages.youmu.onload = () => imageLoaded.youmu = true;
+
+let saveData = { gold: 0, upAtk: 0, upHp: 0 };
+
+function loadGame() {
+    const saved = localStorage.getItem('touhou_survivors_save');
+    if (saved) { try { saveData = Object.assign(saveData, JSON.parse(saved)); } catch(e) {} }
+    updateMenuUI();
+}
+function saveGame() { localStorage.setItem('touhou_survivors_save', JSON.stringify(saveData)); }
+function getCost(type, currentLv) { return (currentLv + 1) * 50; }
+
+function updateMenuUI() {
+    document.getElementById('menuGold').innerText = saveData.gold;
+    document.getElementById('up-atk-lv').innerText = saveData.upAtk;
+    document.getElementById('up-hp-lv').innerText = saveData.upHp;
+    document.getElementById('cost-atk').innerText = getCost('atk', saveData.upAtk);
+    document.getElementById('cost-hp').innerText = getCost('hp', saveData.upHp);
+    document.getElementById('btn-up-atk').disabled = saveData.gold < getCost('atk', saveData.upAtk);
+    document.getElementById('btn-up-hp').disabled = saveData.gold < getCost('hp', saveData.upHp);
+}
+
+function buyPermanent(type) {
+    let cost = getCost(type, saveData[type === 'atk' ? 'upAtk' : 'upHp']);
+    if (saveData.gold >= cost) {
+        saveData.gold -= cost;
+        if (type === 'atk') saveData.upAtk++;
+        else if (type === 'hp') saveData.upHp++;
+        saveGame(); updateMenuUI();
+    }
+}
+
+let selectedCharType = 'reimu';
+function selectChar(type) {
+    selectedCharType = type;
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`char-${type}`).classList.add('selected');
+}
+
+let gameActive = false, score = 0, level = 1, exp = 0, nextExp = 5, surviveTime = 0, goldEarned = 0;
+const camera = { x: 0, y: 0 };
+let player = {}, bullets = [], enemies = [], gems = [], particles = [], spawnTimer = 0;
+const keys = {};
+
+// --- 📱 スマホ用タッチ移動処理 ---
+let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
+
+touchOverlay.addEventListener('touchstart', e => {
+    isTouching = true;
+    const t = e.touches[0];
+    touchStart.x = t.clientX; touchStart.y = t.clientY;
+    touchCurrent.x = t.clientX; touchCurrent.y = t.clientY;
+});
+touchOverlay.addEventListener('touchmove', e => {
+    if (!isTouching) return;
+    const t = e.touches[0];
+    touchCurrent.x = t.clientX; touchCurrent.y = t.clientY;
+    let dx = touchCurrent.x - touchStart.x, dy = touchCurrent.y - touchStart.y;
+    let dist = Math.hypot(dx, dy);
+    if (dist > 10) { touchMoveVector.x = dx / dist; touchMoveVector.y = dy / dist; } 
+    else { touchMoveVector.x = 0; touchMoveVector.y = 0; }
+});
+touchOverlay.addEventListener('touchend', () => { isTouching = false; touchMoveVector.x = 0; touchMoveVector.y = 0; });
+
+// PC用のEscキーとスマホ用の一時停止処理を共通化
+window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    if (e.key === 'Escape' && gameActive) { triggerPause(); }
+});
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+function triggerPause() {
+    gameActive = false;
+    uiTitle.innerText = "戦術一時停止";
+    uiOptions.innerHTML = "";
+    
+    const resumeBtn = document.createElement('button');
+    resumeBtn.className = 'btn'; resumeBtn.innerText = '戦線に復帰する';
+    resumeBtn.onclick = () => { uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
+    
+    const exitBtn = document.createElement('button');
+    exitBtn.className = 'btn'; exitBtn.innerText = '里へ退却する';
+    exitBtn.onclick = () => { exitGameToMenu(); };
+    
+    uiOptions.appendChild(resumeBtn);
+    uiOptions.appendChild(exitBtn);
+    uiLayer.style.display = 'flex';
+}
+
+function exitGameToMenu() {
+    gameActive = false;
+    uiLayer.style.display = 'none';
+    gameContainer.style.display = 'none';
+    document.getElementById('mainMenu').style.display = 'block';
+    updateMenuUI();
+}
+
+const upgrades = [
+    { name: '🔮 弾幕の同時発射数・密度を増幅 (+1)', effect: () => player.multishot += 1 },
+    { name: '⚡ 攻撃頻度を上昇 (攻撃速度 +30%)', effect: () => player.attackSpeed += 0.3 },
+    { name: '💥 霊力限界突破 (与ダメージ +8)', effect: () => player.damage += 8 },
+    { name: '🧲 アイテム回収の霊気範囲拡大 (+70)', effect: () => player.magnetRange += 70 },
+    { name: '💖 御神酒の癒やし (HPを大きく回復)', effect: () => player.hp = Math.min(player.maxHp, player.hp + 65) }
+];
+
+function startGame() {
+    document.getElementById('mainMenu').style.display = 'none';
+    gameContainer.style.display = 'block';
+
+    player = { x: 500, y: 300, size: 32, shootCooldown: 0, multishot: 1, magnetRange: 140, type: selectedCharType, animTimer: 0, lastDirX: 1, isMoving: false };
+
+    if (selectedCharType === 'reimu') { player.maxHp = 100 + (saveData.upHp * 25); player.damage = 16 + (saveData.upAtk * 4); player.speed = 4.3; player.attackSpeed = 1.4; }
+    else if (selectedCharType === 'marisa') { player.maxHp = 85 + (saveData.upHp * 25); player.damage = 20 + (saveData.upAtk * 4); player.speed = 5.2; player.attackSpeed = 1.8; }
+    else if (selectedCharType === 'youmu') { player.maxHp = 120 + (saveData.upHp * 25); player.damage = 18 + (saveData.upAtk * 4); player.speed = 4.6; player.attackSpeed = 1.5; }
+
+    player.hp = player.maxHp;
+    score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
+    bullets = []; enemies = []; gems = []; particles = []; spawnTimer = 0;
+    gameActive = true;
+    updateLoop();
+}
+
+function updateLoop() {
+    if (!gameActive) return;
+    surviveTime += 1 / 60; player.animTimer++;
+    let dx = 0, dy = 0;
+
+    if (keys['arrowup'] || keys['w']) dy -= 1;
+    if (keys['arrowdown'] || keys['s']) dy += 1;
+    if (keys['arrowleft'] || keys['a']) dx -= 1;
+    if (keys['arrowright'] || keys['d']) dx += 1;
+
+    if (isTouching && (touchMoveVector.x !== 0 || touchMoveVector.y !== 0)) { dx = touchMoveVector.x; dy = touchMoveVector.y; } 
+    else if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
+
+    player.isMoving = (dx !== 0 || dy !== 0);
+    if (dx !== 0) player.lastDirX = dx;
+    player.x += dx * player.speed; player.y += dy * player.speed;
+    camera.x = player.x - canvas.width / 2; camera.y = player.y - canvas.height / 2;
+
+    if (player.type === 'youmu') {
+        bullets = bullets.filter(b => b.type !== 'slash'); 
+        for (let i = 0; i < player.multishot; i++) {
+            let angle = (player.animTimer * 0.06) + (i * (Math.PI * 2 / player.multishot));
+            bullets.push({ x: player.x + Math.cos(angle) * 85, y: player.y + Math.sin(angle) * 85, vx: 0, vy: 0, damage: player.damage * 0.75, type: 'slash', size: 36 });
+        }
+    }
+
+    if (player.shootCooldown <= 0 && enemies.length > 0) {
+        player.shootCooldown = 60 / player.attackSpeed;
+        let target = enemies[0]; let minDist = Math.hypot(enemies[0].x - player.x, enemies[0].y - player.y);
+        for (let i = 1; i < enemies.length; i++) { let d = Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y); if (d < minDist) { minDist = d; target = enemies[i]; } }
+        let baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
+
+        if (player.type === 'reimu') {
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = baseAngle + (i - (player.multishot-1)/2) * 0.25;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 11, vy: Math.sin(angle) * 11, damage: player.damage, type: 'amulet', size: 16 });
+            }
+        } else if (player.type === 'marisa') {
+            let moveAngle = player.lastDirX > 0 ? 0 : Math.PI;
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = moveAngle + (i - (player.multishot-1)/2) * 0.2;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 15, vy: Math.sin(angle) * 15, damage: player.damage * 0.85, type: 'star', size: 18 });
+            }
+        }
+    } else { player.shootCooldown--; }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let b = bullets[i];
+        if (b.type === 'amulet' && enemies.length > 0) {
+            let t = enemies[0]; let mD = Math.hypot(enemies[0].x - b.x, enemies[0].y - b.y);
+            for (let j = 1; j < enemies.length; j++) { let d = Math.hypot(enemies[j].x - b.x, enemies[j].y - b.y); if (d < mD) { mD = d; t = enemies[j]; } }
+            let curAngle = Math.atan2(b.vy, b.vx); let targetAngle = Math.atan2(t.y - b.y, t.x - b.x); let diff = targetAngle - curAngle;
+            while (diff < -Math.PI) diff += Math.PI * 2; while (diff > Math.PI) diff -= Math.PI * 2;
+            curAngle += diff * 0.22; b.vx = Math.cos(curAngle) * 11; b.vy = Math.sin(curAngle) * 11;
+        }
+        b.x += b.vx; b.y += b.vy;
+        if (b.type !== 'slash' && Math.hypot(b.x - player.x, b.y - player.y) > 750) bullets.splice(i, 1);
+    }
+
+    spawnTimer++; const spawnRate = Math.max(7, 32 - Math.floor(surviveTime / 16));
+    if (spawnTimer % spawnRate === 0) {
+        const angle = Math.random() * Math.PI * 2; const isBoss = Math.random() < 0.06 + (surviveTime / 220); const size = isBoss ? 55 : 26;
+        enemies.push({ x: player.x + Math.cos(angle) * 550, y: player.y + Math.sin(angle) * 550, size: size, hp: isBoss ? 210 + (surviveTime*8) : 9 + (surviveTime*1.4), maxHp: isBoss ? 210 + (surviveTime*8) : 9 + (surviveTime*1.4), speed: isBoss ? 1.5 : 2.4 + Math.random() * 0.7, isBoss: isBoss });
+    }
+
+    for (let eIndex = enemies.length - 1; eIndex >= 0; eIndex--) {
+        const enemy = enemies[eIndex]; const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if (dist > 0) { enemy.x += ((player.x - enemy.x) / dist) * enemy.speed; enemy.y += ((player.y - enemy.y) / dist) * enemy.speed; }
+        if (dist < (enemy.size * 0.45 + player.size * 0.4)) { player.hp -= enemy.isBoss ? 1.1 : 0.45; createParticles(enemy.x, enemy.y, '#ff4d4d', 1); if (player.hp <= 0) { gameOver(); return; } }
+
+        for (let bIndex = bullets.length - 1; bIndex >= 0; bIndex--) {
+            const b = bullets[bIndex];
+            if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < (enemy.size * 0.5 + b.size * 0.5)) {
+                enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); if (b.type !== 'slash') bullets.splice(bIndex, 1);
+                if (enemy.hp <= 0) {
+                    enemies.splice(eIndex, 1); score += enemy.isBoss ? 500 : 40;
+                    gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 15 : 1, type: 'exp' }); 
+                    if (Math.random() < 0.6 || enemy.isBoss) gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 25 : 4, type: 'gold' }); 
+                    break;
+                }
+            }
+        }
+    }
+
+    for (let gIndex = gems.length - 1; gIndex >= 0; gIndex--) {
+        const gem = gems[gIndex]; const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
+        if (dist < player.magnetRange) { gem.x += ((player.x - gem.x) / dist) * 10; gem.y += ((player.y - gem.y) / dist) * 10; }
+        if (dist < 22) {
+            if (gem.type === 'exp') { exp += gem.value; if (exp >= nextExp) { levelUp(); gems.splice(gIndex, 1); return; } }
+            else if (gem.type === 'gold') goldEarned += gem.value;
+            gems.splice(gIndex, 1);
+        }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) { p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.05; if (p.alpha <= 0) particles.splice(i, 1); }
+    draw(); requestAnimationFrame(updateLoop);
+}
+
+function createParticles(x, y, color, count = 3) { for (let i = 0; i < count; i++) particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, color: color, alpha: 1 }); }
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#141423'; ctx.lineWidth = 1; const spacing = 64;
+    for (let x = Math.floor(camera.x / spacing) * spacing; x < camera.x + canvas.width + spacing; x += spacing) { ctx.beginPath(); ctx.moveTo(x - camera.x, 0); ctx.lineTo(x - camera.x, canvas.height); ctx.stroke(); }
+    for (let y = Math.floor(camera.y / spacing) * spacing; y < camera.y + canvas.height + spacing; y += spacing) { ctx.beginPath(); ctx.moveTo(0, y - camera.y); ctx.lineTo(canvas.width, y - camera.y); ctx.stroke(); }
+
+    gems.forEach(gem => { ctx.save(); ctx.translate(gem.x - camera.x, gem.y - camera.y); if (gem.type === 'exp') { ctx.fillStyle = '#2e86de'; ctx.fillRect(-5, -5, 10, 10); } else { ctx.fillStyle = '#ff3838'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill(); } ctx.restore(); });
+    bullets.forEach(b => { ctx.save(); ctx.translate(b.x - camera.x, b.y - camera.y); if (b.type === 'amulet') { ctx.fillStyle = '#ff4d4d'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.fillRect(-4, -8, 8, 16); ctx.strokeRect(-4, -8, 8, 16); } else if (b.type === 'star') { ctx.fillStyle = '#f1c40f'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('★', 0, 0); } else if (b.type === 'slash') { let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2); grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#2ed573'); grad.addColorStop(1, 'rgba(46,213,115,0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); } ctx.restore(); });
+    enemies.forEach(enemy => { ctx.save(); ctx.translate(enemy.x - camera.x, enemy.y - camera.y); ctx.fillStyle = enemy.isBoss ? '#8e44ad' : '#7f8c8d'; ctx.beginPath(); ctx.arc(0, 0, enemy.size/2, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.arc(enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.fill(); ctx.restore(); });
+
+    ctx.save(); ctx.translate(player.x - camera.x, player.y - camera.y); if (player.lastDirX < 0) ctx.scale(-1, 1);
+    const bob = Math.sin(player.animTimer * 0.12) * 2;
+    if (imageLoaded[player.type]) { ctx.imageSmoothingEnabled = false; ctx.drawImage(charImages[player.type], -player.size/2, -player.size/2 + bob, player.size, player.size); } 
+    else { ctx.fillStyle = player.type === 'reimu' ? '#ff4d4d' : player.type === 'marisa' ? '#f1c40f' : '#2ed573'; ctx.beginPath(); ctx.arc(0, bob, player.size/2, 0, Math.PI*2); ctx.fill(); }
+    ctx.restore();
+    
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fillRect(p.x - camera.x, p.y - camera.y, 4, 4); ctx.globalAlpha = 1.0; });
+
+    // UIの描画
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(30, 20, canvas.width - 60, 10, 5); ctx.fill();
+    ctx.fillStyle = '#2e86de'; ctx.beginPath(); ctx.roundRect(30, 20, (canvas.width - 60) * Math.min(1, exp / nextExp), 10, 5); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(30, canvas.height - 40, 260, 18, 9); ctx.fill();
+    ctx.fillStyle = '#ff4757'; ctx.beginPath(); ctx.roundRect(30, canvas.height - 40, 260 * Math.max(0, player.hp / player.maxHp), 18, 9); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.fillText(`LIFE: ${Math.ceil(player.hp)} / ${player.maxHp}`, 45, canvas.height - 27);
+    ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+    ctx.fillText(`Level. ${level}`, canvas.width - 35, 60); ctx.fillText(`SCORE: ${score}`, canvas.width - 35, 82); ctx.fillStyle = '#ffcc00'; ctx.fillText(`POWER: ${goldEarned}`, canvas.width - 35, 104);
+    ctx.fillStyle = '#a4b0be'; const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0'); ctx.fillText(`TIME: ${min}:${sec}`, canvas.width - 35, 126); ctx.textAlign = 'left';
+}
+
+function levelUp() {
+    gameActive = false; level++; exp -= nextExp; nextExp = Math.floor(nextExp * 1.5) + 4;
+    uiTitle.innerText = `能力開花 (Lv.${level})`; uiOptions.innerHTML = ""; const shuffled = [...upgrades].sort(() => 0.5 - Math.random()).slice(0, 3);
+    shuffled.forEach(upgrade => {
+        const btn = document.createElement('button'); btn.className = 'btn'; btn.innerText = upgrade.name;
+        btn.onclick = () => { upgrade.effect(); uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
+        uiOptions.appendChild(btn);
+    });
+    uiLayer.style.display = 'flex';
+}
+
+function gameOver() {
+    gameActive = false; uiTitle.innerText = "満身創痍"; saveData.gold += goldEarned; saveGame();
+    const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0');
+    uiOptions.innerHTML = `<p style="margin:5px 0; font-size:16px;">リザルト</p><p style="margin:5px 0; font-size:14px;">防衛時間: ${min}分${sec}秒</p><p style="margin:5px 0; font-size:14px;">回収Pアイテム: <span class="p-text">+${goldEarned}</span> 🔴</p>`;
+    const menuBtn = document.createElement('button'); menuBtn.className = 'btn'; menuBtn.innerText = '里へ戻る';
+    menuBtn.onclick = () => { uiLayer.style.display = 'none'; gameContainer.style.display = 'none'; document.getElementById('mainMenu').style.display = 'block'; updateMenuUI(); };
+    uiOptions.appendChild(menuBtn); uiLayer.style.display = 'flex';
+}
+
+loadGame();
+</script>
+</body>
+</html>
