@@ -310,6 +310,12 @@
                     <h4 style="color:#54a0ff; margin:2px 0;">ロキシー・ミグルディア</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">絶対零度(範囲氷結) / 💥キュムロニンバス(画面全体雷雨爆撃)</p>
                 </div>
+                <!-- ⚾ 加藤純一の追加 -->
+                <div class="card locked" id="char-jun" onclick="selectChar('jun')">
+                    <span class="lock-badge" id="badge-jun">🔒 未解放</span>
+                    <h4 style="color:#ff9f43; margin:2px 0;">加藤 純一</h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">スイング衝撃波 / 💥ビヨンド(超パワフル広範囲バット乱舞)</p>
+                </div>
             </div>
             <button class="btn" style="background:#74b9ff; color:#000; border:none; width:100%; margin-top:10px;" onclick="toggleCharModal(false)">決定して戻る</button>
         </div>
@@ -350,7 +356,8 @@ const charNamesJp = {
     sakuya: '十六夜 咲夜', 
     reisen: '鈴仙・優曇華院',
     gojou: '五条 悟',
-    roxy: 'ロキシー'
+    roxy: 'ロキシー',
+    jun: '加藤 純一'
 };
 
 const charImages = { 
@@ -360,7 +367,8 @@ const charImages = {
     sakuya: new Image(), 
     reisen: new Image(),
     gojou: new Image(),
-    roxy: new Image()
+    roxy: new Image(),
+    jun: new Image()
 };
 charImages.reimu.src = 'reimu.png'; 
 charImages.marisa.src = 'marisa.png'; 
@@ -369,8 +377,9 @@ charImages.sakuya.src = 'sakuya.png';
 charImages.reisen.src = 'reisen.png';
 charImages.gojou.src = 'gojou.png'; // 五条悟画像指定
 charImages.roxy.src = 'roxy.png';   // ロキシー画像指定
+charImages.jun.src = 'jun.png';     // 加藤純一画像指定
 
-let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false };
+let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false, jun: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
 
 // セーブデータ初期値
@@ -538,7 +547,7 @@ function createSynthSE(type) {
         dNotes.forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'triangle';
+            ctx.type = 'triangle';
             const startTime = now + (idx * 0.12);
             const duration = (idx === dNotes.length - 1) ? 0.6 : 0.15;
             osc.frequency.setValueAtTime(freq, startTime);
@@ -548,6 +557,20 @@ function createSynthSE(type) {
             osc.start(startTime); osc.stop(startTime + duration);
         });
     }
+}
+
+// 加藤純一スペカ音声再生関数
+function playJunVoice() {
+    initAudio();
+    if (!audioCtx) return;
+    
+    // 音声合成（Web Speech API）でセリフをリアルタイムに叫ばせる
+    const utterance = new SpeechSynthesisUtterance("おいテメェ！俺の右ストレートで…ぶっ殺してやるからなテメェ！");
+    utterance.lang = 'ja-JP';
+    utterance.rate = 1.3;  // 早口でパワフルに
+    utterance.pitch = 0.8; // 力強い低音
+    utterance.volume = saveData.volSE;
+    window.speechSynthesis.speak(utterance);
 }
 
 function loadGame() {
@@ -584,7 +607,7 @@ function updateMenuUI() {
     document.getElementById('btn-gacha').disabled = saveData.gold < 200;
     document.getElementById('selected-char-name').innerText = charNamesJp[selectedCharType];
 
-    ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy'].forEach(c => {
+    ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy', 'jun'].forEach(c => {
         if (saveData.unlockedChars.includes(c)) {
             document.getElementById(`char-${c}`).classList.remove('locked');
             document.getElementById(`badge-${c}`).innerText = "✓ 解放済";
@@ -597,7 +620,7 @@ function drawGacha() {
     if (saveData.gold < 200) return;
     saveData.gold -= 200;
     createSynthSE('levelup'); 
-    const pool = ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy'];
+    const pool = ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy', 'jun'];
     const picked = pool[Math.floor(Math.random() * pool.length)];
     const resultDiv = document.getElementById('gacha-result');
 
@@ -718,6 +741,11 @@ function activateSpellCard() {
                 });
             }, i * 60);
         }
+    } else if (player.type === 'jun') {
+        // 加藤純一：スペカ「ビヨンド」を発動
+        playJunVoice(); // 指定音声を再生
+        spellActiveTimer = 180; // 3秒間持続
+        createParticles(player.x, player.y, '#ff9f43', 40);
     }
 }
 
@@ -785,7 +813,8 @@ function getUpgradeOptions() {
             sakuya: ['⏳ 習得：殺人ドール (画面跳弾ナイフが永続巡回)', '⏳ 強化：殺人ドール (跳弾ナイフの巡回数が2倍に増加)'],
             reisen: ['👁️ 習得：幻朧月睨 (狂気波動による全周囲斥力)', '👁️ 強化：幻朧月睨 (錯乱波のダメージと衝撃力が極大化)'],
             gojou: ['👁️‍🗨️ 習得：無下限呪術・常時展開 (自動防御シールド)', '👁️‍🗨️ 強化：無下限呪術 (シールド耐久値上限が2倍にアップ)'],
-            roxy: ['🧙‍♀️ 習得：魔術短縮詠唱 (基本連射速度が常時+25%)', '🧙‍♀️ 強化：魔術短縮詠唱 (弾幕発射数が追加で+1)']
+            roxy: ['🧙‍♀️ 習得：魔術短縮詠唱 (基本連射速度が常時+25%)', '🧙‍♀️ 強化：魔術短縮詠唱 (弾幕発射数が追加で+1)'],
+            jun: ['⚾ 習得：フルスイング (スイング範囲拡大＆ノックバック強化)', '⚾ 強化：フルスイング (スイングダメージ1.5倍＆攻撃回数増加)']
         };
         list.push({
             name: pNames[player.type][personalSkillLevel],
@@ -813,6 +842,10 @@ function getUpgradeOptions() {
                     if (personalSkillLevel === 1) player.attackSpeed += 0.4;
                     if (personalSkillLevel === 2) player.multishot += 1;
                 }
+                if (player.type === 'jun') {
+                    if (personalSkillLevel === 1) { player.damage += 10; }
+                    if (personalSkillLevel === 2) { player.multishot += 1; }
+                }
             }
         });
     }
@@ -838,6 +871,7 @@ function startGame() {
     else if (selectedCharType === 'reisen') { player.maxHp = 110; player.damage = 20; player.speed = 4.2; player.attackSpeed = 1.3; }
     else if (selectedCharType === 'gojou') { player.maxHp = 150; player.damage = 25; player.speed = 4.5; player.attackSpeed = 1.2; } // 五条悟ステータス
     else if (selectedCharType === 'roxy') { player.maxHp = 90; player.damage = 28; player.speed = 4.0; player.attackSpeed = 1.1; }  // ロキシーステータス
+    else if (selectedCharType === 'jun') { player.maxHp = 140; player.damage = 35; player.speed = 4.4; player.attackSpeed = 1.0; }   // 加藤純一ステータス（高火力パワフル設定）
 
     player.maxHp += (saveData.upHp * 25); player.damage += (saveData.upAtk * 4);
     player.hp = player.maxHp; score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
@@ -887,7 +921,7 @@ function updateLoop() {
     if (player.type === 'youmu' && spellActiveTimer > 0) currentSpeed *= 1.8;
     
     player.x += dx * currentSpeed; player.y += dy * currentSpeed;
-    camera.x = player.x - canvas.width / 2; camera.y = player.y - canvas.height / 2;
+    camera.x = player.x - canvas.width / 2; camera.y = player.y - camera.height / 2;
 
     if (player.type === 'reisen' && personalSkillLevel > 0 && !sakuyaTimeStopActive && player.animTimer % 100 === 0) {
         let waveRadius = personalSkillLevel === 1 ? 160 : 250;
@@ -944,7 +978,7 @@ function updateLoop() {
         if (didHit) createSynthSE('hit');
     }
 
-    bullets = bullets.filter(b => b.type !== 'book' && b.type !== 'slash');
+    bullets = bullets.filter(b => b.type !== 'book' && b.type !== 'slash' && b.type !== 'jun_swing' && b.type !== 'beyond_swing');
     if (subWeapons.book > 0) {
         let count = subWeapons.book + 1; let radius = 90 + subWeapons.book * 10;
         for (let i = 0; i < count; i++) {
@@ -969,6 +1003,31 @@ function updateLoop() {
             let radius = (spellActiveTimer > 0) ? 140 : 85;
             bullets.push({ x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius, vx: 0, vy: 0, damage: player.damage * 0.75, type: 'slash', size: slashSize });
         }
+    }
+
+    // 加藤純一のスペカ「ビヨンド」作動中のバット乱舞処理
+    if (player.type === 'jun' && spellActiveTimer > 0) {
+        let bCount = 6; // 6つの超巨大スイング波を周囲に展開
+        for (let i = 0; i < bCount; i++) {
+            let angle = (player.animTimer * 0.15) + (i * (Math.PI * 2 / bCount));
+            let radius = 70 + Math.sin(player.animTimer * 0.1) * 30;
+            bullets.push({
+                x: player.x + Math.cos(angle) * radius,
+                y: player.y + Math.sin(angle) * radius,
+                vx: 0, vy: 0,
+                damage: player.damage * 2.0, // 超強烈ダメージ
+                type: 'beyond_swing',
+                size: 90 // 超巨大サイズ
+            });
+        }
+        // 周囲の敵を強烈に押し返す斥力
+        enemies.forEach(e => {
+            let d = Math.hypot(e.x - player.x, e.y - player.y);
+            if (d < 280) {
+                let pushAng = Math.atan2(e.y - player.y, e.x - player.x);
+                e.x += Math.cos(pushAng) * 8; e.y += Math.sin(pushAng) * 8;
+            }
+        });
     }
 
     if (player.shootCooldown <= 0 && enemies.length > 0) {
@@ -1016,6 +1075,23 @@ function updateLoop() {
                 let angle = baseAngle + (i - (player.multishot-1)/2) * 0.25;
                 bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, damage: player.damage * 1.4, type: 'ice', size: 22 });
             }
+        } else if (player.type === 'jun') {
+            // 加藤純一：通常攻撃（前方に豪快なスイング衝撃波を放つ）
+            let swingRange = personalSkillLevel > 0 ? 70 : 45;
+            let swingDmg = personalSkillLevel === 2 ? player.damage * 1.5 : player.damage;
+            let targetAngle = Math.atan2(target.y - player.y, target.x - player.x);
+            for (let i = 0; i < player.multishot; i++) {
+                let offAngle = targetAngle + (i - (player.multishot - 1) / 2) * 0.35;
+                bullets.push({
+                    x: player.x + Math.cos(offAngle) * 40,
+                    y: player.y + Math.sin(offAngle) * 40,
+                    vx: Math.cos(offAngle) * 7,
+                    vy: Math.sin(offAngle) * 7,
+                    damage: swingDmg,
+                    type: 'jun_swing',
+                    size: swingRange
+                });
+            }
         }
     } else { player.shootCooldown--; }
 
@@ -1040,7 +1116,7 @@ function updateLoop() {
         }
 
         b.x += b.vx; b.y += b.vy;
-        if (b.type !== 'slash' && b.type !== 'book' && Math.hypot(b.x - player.x, b.y - player.y) > 850) { bullets.splice(i, 1); }
+        if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'ao' && b.type !== 'jun_swing' && b.type !== 'beyond_swing' && !b.penetrate && Math.hypot(b.x - player.x, b.y - player.y) > 850) { bullets.splice(i, 1); }
     }
 
     if (!sakuyaTimeStopActive) {
@@ -1134,8 +1210,16 @@ function updateLoop() {
                     });
                 }
 
+                // 加藤純一のバットスイングによる強力ノックバック効果
+                if (b.type === 'jun_swing' || b.type === 'beyond_swing') {
+                    let kAng = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                    let kDist = b.type === 'beyond_swing' ? 35 : (personalSkillLevel > 0 ? 25 : 12);
+                    enemy.x += Math.cos(kAng) * kDist;
+                    enemy.y += Math.sin(kAng) * kDist;
+                }
+
                 enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); createSynthSE('hit');
-                if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'ao' && !b.penetrate) bullets.splice(bIndex, 1);
+                if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'ao' && b.type !== 'jun_swing' && b.type !== 'beyond_swing' && !b.penetrate) bullets.splice(bIndex, 1);
             }
         }
 
@@ -1219,6 +1303,16 @@ function draw() {
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#54a0ff'); grad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
+        } else if (b.type === 'jun_swing') {
+            // 加藤純一の通常スイング衝撃波エフェクト
+            let grad = ctx.createRadialGradient(0, 0, 2, 0, 0, b.size);
+            grad.addColorStop(0, '#fff'); grad.addColorStop(0.6, '#ff9f43'); grad.addColorStop(1, 'rgba(255,159,67,0)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size, 0, Math.PI * 2); ctx.fill();
+        } else if (b.type === 'beyond_swing') {
+            // スペカ「ビヨンド」の超巨大乱舞エフェクト
+            let grad = ctx.createRadialGradient(0, 0, 10, 0, 0, b.size);
+            grad.addColorStop(0, '#fff'); grad.addColorStop(0.3, '#ff4757'); grad.addColorStop(0.7, '#ff9f43'); grad.addColorStop(1, 'rgba(235,94,40,0)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size, 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore(); 
     });
@@ -1257,7 +1351,7 @@ function draw() {
         ctx.imageSmoothingEnabled = false; 
         ctx.drawImage(charImages[player.type], -player.size/2, -player.size/2 + bob, player.size, player.size); 
     } else { 
-        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea', gojou: '#ffffff', roxy: '#54a0ff' };
+        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea', gojou: '#ffffff', roxy: '#54a0ff', jun: '#ff9f43' };
         ctx.fillStyle = colors[player.type]; ctx.beginPath(); ctx.arc(0, bob, player.size/2, 0, Math.PI*2); ctx.fill(); 
     }
     ctx.restore(); ctx.globalAlpha = 1.0;
