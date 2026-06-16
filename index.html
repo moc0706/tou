@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>幻想郷サバイバーズ！</title>
+    <title>幻想郷サバイバーズ！ Ver4.0</title>
     <style>
         body {
             margin: 0;
@@ -20,7 +20,6 @@
             touch-action: none;
         }
         
-        /* 📱 スマホ・PCで表示を切り替える賢いコンテナ */
         .canvas-container {
             position: relative;
             display: none;
@@ -31,7 +30,6 @@
             box-sizing: border-box;
         }
 
-        /* スマホ（縦画面）の時は画面いっぱいの縦長にする */
         @media (max-aspect-ratio: 1/1) {
             .canvas-container {
                 max-width: 100vw;
@@ -53,14 +51,28 @@
         .menu-window {
             background: rgba(15, 15, 25, 0.96);
             border: 3px solid #ff4757;
-            padding: 25px;
+            padding: 20px;
             border-radius: 24px;
             text-align: center;
-            max-width: 400px;
+            max-width: 420px;
             width: 85%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.8);
             z-index: 20;
+            max-height: 95vh;
+            overflow-y: auto;
         }
+
+        /* 🌟 キャラ選択用モーダルウィンドウ */
+        .modal-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 5, 10, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+        }
+
         #ui-layer {
             position: absolute;
             top: 50%; left: 50%;
@@ -68,14 +80,14 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            background: rgba(10, 10, 20, 0.95);
+            background: rgba(10, 10, 20, 0.97);
             color: #fff;
             border: 4px solid #ff4757;
             padding: 25px;
             border-radius: 20px;
             text-align: center;
-            width: 80%;
-            max-width: 300px;
+            width: 85%;
+            max-width: 360px;
             z-index: 30;
             box-shadow: 0 15px 40px rgba(0,0,0,0.5);
         }
@@ -89,9 +101,10 @@
             font-size: 15px;
             font-weight: bold;
             border-radius: 12px;
+            transition: all 0.2s;
         }
-        .btn:disabled { border-color: #444; color: #666; background: #111; }
-        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 15px 0; }
+        .btn:disabled { border-color: #444; color: #666; background: #111; cursor: not-allowed; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
         .card { 
             border: 2px solid #2f3542; 
             padding: 10px; 
@@ -99,10 +112,13 @@
             cursor: pointer; 
             border-radius: 16px;
             text-align: center;
+            position: relative;
         }
-        .card.selected { border-color: #ff4757; background: #222536; }
+        .card.selected { border-color: #ff4757; background: #222536; box-shadow: 0 0 10px rgba(255,71,87,0.3); }
+        .card.locked { opacity: 0.4; cursor: not-allowed; background: #08080f; }
+        .lock-badge { position: absolute; top: 5px; right: 10px; color: #ff4757; font-size: 11px; font-weight: bold; }
         .p-text { color: #ffcc00; font-weight: bold; font-size: 20px; }
-        #controls { margin-top: 15px; color: #a4b0be; font-size: 11px; text-align: center; padding: 0 10px; }
+        #controls { margin-top: 10px; color: #a4b0be; font-size: 11px; text-align: center; padding: 0 10px; }
         
         #touch-overlay {
             position: absolute;
@@ -110,7 +126,6 @@
             z-index: 5;
         }
 
-        /* ⏸️ 被らないように右上に独立させた停止ボタン */
         #pause-btn {
             position: absolute;
             top: 45px; right: 20px;
@@ -126,52 +141,113 @@
             cursor: pointer;
             z-index: 15;
         }
+
+        #bomb-btn {
+            position: absolute;
+            bottom: 30px; right: 20px;
+            width: 70px; height: 70px;
+            background: radial-gradient(#ff4757, #cc2e43);
+            border: 3px solid #fff;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 15;
+            box-shadow: 0 4px 15px rgba(255,71,87,0.5);
+            text-shadow: 1px 1px 2px #000;
+        }
+        #bomb-btn:disabled { background: #2f3542; border-color: #747d8c; color: #a4b0be; box-shadow: none; }
     </style>
 </head>
 <body>
 
+    <!-- メインメニュー -->
     <div id="mainMenu" class="menu-window">
-        <h1 style="color:#ff4757; margin-top:0; font-size: 24px;">☯️ 幻想郷サバイバーズ！ ☯️</h1>
-        <p style="margin: 5px 0;">集めたPアイテム: <span id="menuGold" class="p-text">0</span> 🔴</p>
+        <h1 style="color:#ff4757; margin-top:0; font-size: 22px; letter-spacing: 1px;">☯️ 幻想郷サバイバーズ！ ☯️</h1>
+        <p style="margin: 5px 0;">所持POINT: <span id="menuGold" class="p-text">0</span> 🔴</p>
         
-        <h3 style="margin: 15px 0 5px 0;">【1】 キャラクター選択</h3>
-        <div class="grid">
-            <div class="card selected" id="char-reimu" onclick="selectChar('reimu')">
-                <h4 style="color:#ff4757; margin:2px 0;">博麗 霊夢</h4>
-                <p style="font-size:11px; color:#a4b0be; margin:2px 0 0 0;">自動追尾する博麗札＆陰陽玉</p>
-            </div>
-            <div class="card" id="char-marisa" onclick="selectChar('marisa')">
-                <h4 style="color:#eccc68; margin:2px 0;">霧雨 魔理沙</h4>
-                <p style="font-size:11px; color:#a4b0be; margin:2px 0 0 0;">前方に広がる広角星弾幕</p>
-            </div>
-            <div class="card" id="char-youmu" onclick="selectChar('youmu')">
-                <h4 style="color:#2ed573; margin:2px 0;">魂魄 妖夢</h4>
-                <p style="font-size:11px; color:#a4b0be; margin:2px 0 0 0;">周囲を薙ぎ払う旋回剣気</p>
+        <!-- ⛩️ ガチャ要素 -->
+        <div style="background: rgba(255,204,0,0.1); border: 2px dashed #ffcc00; padding: 10px; border-radius: 16px; margin-bottom: 12px;">
+            <h4 style="margin: 0 0 5px 0; color:#ffcc00;">⛩️ 博麗神社 賽銭箱ガチャ</h4>
+            <button class="btn" id="btn-gacha" style="background:#ffcc00; color:#000; border:none; width:90%; margin:2px 0;" onclick="drawGacha()">ガチャを引く (消費: 200🔴)</button>
+            <div id="gacha-result" style="font-size:12px; margin-top:5px; font-weight:bold; height:15px; color:#2ed573;"></div>
+        </div>
+
+        <!-- 🌟 出撃情報＆選択画面への遷移ボタン -->
+        <div style="background: #11121a; border: 2px solid #2f3542; padding: 12px; border-radius: 16px; margin-bottom: 12px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 12px; color: #a4b0be;">選択中の出撃キャラクター:</span>
+                    <div id="selected-char-name" style="font-size: 16px; font-weight: bold; color: #ff4757; margin-top: 2px;">博麗 霊夢</div>
+                </div>
+                <button class="btn" style="padding: 6px 12px; font-size: 12px; margin: 0;" onclick="toggleCharModal(true)">仲間を募る ⛩️</button>
             </div>
         </div>
 
-        <h3 style="margin: 15px 0 5px 0;">【2】 能力解放（永続強化）</h3>
-        <div style="font-size: 13px; background:#0b0c10; padding:12px; border-radius:14px; border:1px solid #2f3542;">
-            <div style="margin-bottom: 8px;">⚔️ 攻撃力 Lv.<span id="up-atk-lv">0</span> <button class="btn" style="padding:4px 10px; font-size:11px; margin-left:5px;" id="btn-up-atk" onclick="buyPermanent('atk')">消費: <span id="cost-atk">50</span>🔴</button></div>
+        <h3 style="margin: 10px 0 5px 0; font-size:15px;">【2】 能力解放（永続強化）</h3>
+        <div style="font-size: 12px; background:#0b0c10; padding:10px; border-radius:14px; border:1px solid #2f3542;">
+            <div style="margin-bottom: 6px;">⚔️ 攻撃力 Lv.<span id="up-atk-lv">0</span> <button class="btn" style="padding:4px 10px; font-size:11px; margin-left:5px;" id="btn-up-atk" onclick="buyPermanent('atk')">消費: <span id="cost-atk">50</span>🔴</button></div>
             <div>❤️ 体力倍率 Lv.<span id="up-hp-lv">0</span> <button class="btn" style="padding:4px 10px; font-size:11px; margin-left:5px;" id="btn-up-hp" onclick="buyPermanent('hp')">消費: <span id="cost-hp">50</span>🔴</button></div>
         </div>
 
-        <button class="btn" style="font-size:18px; margin-top:20px; width:100%; background:#ff4757; color:#fff;" onclick="startGame()">異変解決へ向かう</button>
+        <button class="btn" style="font-size:18px; margin-top:15px; width:100%; background:#ff4757; color:#fff;" onclick="startGame()">異変解決へ向かう</button>
     </div>
 
+    <!-- 🌟 キャラクター一覧モーダル画面 -->
+    <div id="charModal" class="modal-layer">
+        <div class="menu-window" style="border-color: #74b9ff;">
+            <h3 style="color:#74b9ff; margin-top:0;">⛩️ 参戦キャラクター一覧</h3>
+            <div class="grid">
+                <div class="card selected" id="char-reimu" onclick="selectChar('reimu')">
+                    <h4 style="color:#ff4757; margin:2px 0;">博麗 霊夢</h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">追尾札 / 💥夢想封印(全体攻撃)</p>
+                </div>
+                <div class="card locked" id="char-marisa" onclick="selectChar('marisa')">
+                    <span class="lock-badge" id="badge-marisa">🔒 未解放</span>
+                    <h4 style="color:#eccc68; margin:2px 0;">霧雨 魔理沙</h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">星弾幕 / 💥マスタースパーク(極太レーザー)</p>
+                </div>
+                <div class="card locked" id="char-youmu" onclick="selectChar('youmu')">
+                    <span class="lock-badge" id="badge-youmu">🔒 未解放</span>
+                    <h4 style="color:#2ed573; margin:2px 0;">魂魄 妖夢</h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">旋回剣気 / 💥待宵反射星(無敵巨大化)</p>
+                </div>
+                <div class="card locked" id="char-sakuya" onclick="selectChar('sakuya')">
+                    <span class="lock-badge" id="badge-sakuya">🔒 未解放</span>
+                    <h4 style="color:#74b9ff; margin:2px 0;">十六夜 咲夜</h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">高速投擲ナイフ / 💥ザ・ワールド(5秒時間停止)</p>
+                </div>
+                <div class="card locked" id="char-reisen" onclick="selectChar('reisen')">
+                    <span class="lock-badge" id="badge-reisen">🔒 未解放</span>
+                    <h4 style="color:#a55eea; margin:2px 0;">鈴仙・優曇華院</h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">前後貫通レーザー / 💥赤眼催眠(周囲超爆発)</p>
+                </div>
+            </div>
+            <button class="btn" style="background:#74b9ff; color:#000; border:none; width:100%; margin-top:10px;" onclick="toggleCharModal(false)">決定して戻る</button>
+        </div>
+    </div>
+
+    <!-- ゲームプレイ画面 -->
     <div id="gameContainer" class="canvas-container">
         <canvas id="gameCanvas" width="960" height="580"></canvas>
         <div id="touch-overlay"></div>
         <div id="pause-btn" onclick="triggerPause()">⏸️</div>
+        <button id="bomb-btn" onclick="activateSpellCard()"><div>スペカ</div><div id="bomb-cooldown" style="font-size:10px;">READY</div></button>
     </div>
     
+    <!-- ポーズ/レベルアップ用UI -->
     <div id="ui-layer">
         <h2 id="ui-title" style="color:#ff4757; margin-top:0; font-size: 20px;">能力開花</h2>
         <div id="ui-options" style="display:flex; flex-direction:column; width:100%;"></div>
     </div>
 
     <div id="controls">
-        PC: WASD移動 | スマホ: 画面ドラッグ移動 / ⏸️で中断
+        PC: WASD移動 & Spaceでスペカ | スマホ: ドラッグ移動 & 右下ボタンでスペカ
     </div>
 
 <script>
@@ -182,24 +258,30 @@ const uiLayer = document.getElementById('ui-layer');
 const uiTitle = document.getElementById('ui-title');
 const uiOptions = document.getElementById('ui-options');
 const touchOverlay = document.getElementById('touch-overlay');
+const bombBtn = document.getElementById('bomb-btn');
+const bombCdText = document.getElementById('bomb-cooldown');
+const charModal = document.getElementById('charModal');
 
-// --- 👾 画像読み込み設定 ---
-const charImages = { reimu: new Image(), marisa: new Image(), youmu: new Image() };
-charImages.reimu.src = 'reimu.png'; charImages.marisa.src = 'marisa.png'; charImages.youmu.src = 'youmu.png';
-let imageLoaded = { reimu: false, marisa: false, youmu: false };
-charImages.reimu.onload = () => imageLoaded.reimu = true;
-charImages.marisa.onload = () => imageLoaded.marisa = true;
-charImages.youmu.onload = () => imageLoaded.youmu = true;
+const charNamesJp = { reimu: '博麗 霊夢', marisa: '霧雨 魔理沙', youmu: '魂魄 妖夢', sakuya: '十六夜 咲夜', reisen: '鈴仙・優曇華院' };
 
-let saveData = { gold: 0, upAtk: 0, upHp: 0 };
+// --- 画像設定 ---
+const charImages = { reimu: new Image(), marisa: new Image(), youmu: new Image(), sakuya: new Image(), reisen: new Image() };
+charImages.reimu.src = 'reimu.png'; charImages.marisa.src = 'marisa.png'; charImages.youmu.src = 'youmu.png'; charImages.sakuya.src = 'sakuya.png'; charImages.reisen.src = 'reisen.png';
+let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false };
+Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
+
+let saveData = { gold: 0, upAtk: 0, upHp: 0, unlockedChars: ['reimu'] };
 
 function loadGame() {
-    const saved = localStorage.getItem('touhou_survivors_save');
+    const saved = localStorage.getItem('touhou_survivors_save_v4');
     if (saved) { try { saveData = Object.assign(saveData, JSON.parse(saved)); } catch(e) {} }
+    if (!saveData.unlockedChars) saveData.unlockedChars = ['reimu'];
     updateMenuUI();
 }
-function saveGame() { localStorage.setItem('touhou_survivors_save', JSON.stringify(saveData)); }
+function saveGame() { localStorage.setItem('touhou_survivors_save_v4', JSON.stringify(saveData)); }
 function getCost(type, currentLv) { return (currentLv + 1) * 50; }
+
+function toggleCharModal(show) { charModal.style.display = show ? 'flex' : 'none'; }
 
 function updateMenuUI() {
     document.getElementById('menuGold').innerText = saveData.gold;
@@ -209,59 +291,113 @@ function updateMenuUI() {
     document.getElementById('cost-hp').innerText = getCost('hp', saveData.upHp);
     document.getElementById('btn-up-atk').disabled = saveData.gold < getCost('atk', saveData.upAtk);
     document.getElementById('btn-up-hp').disabled = saveData.gold < getCost('hp', saveData.upHp);
+    document.getElementById('btn-gacha').disabled = saveData.gold < 200;
+    document.getElementById('selected-char-name').innerText = charNamesJp[selectedCharType];
+
+    ['marisa', 'youmu', 'sakuya', 'reisen'].forEach(c => {
+        if (saveData.unlockedChars.includes(c)) {
+            document.getElementById(`char-${c}`).classList.remove('locked');
+            document.getElementById(`badge-${c}`).innerText = "✓ 解放済";
+            document.getElementById(`badge-${c}`).style.color = "#2ed573";
+        }
+    });
+}
+
+function drawGacha() {
+    if (saveData.gold < 200) return;
+    saveData.gold -= 200;
+    const pool = ['marisa', 'youmu', 'sakuya', 'reisen'];
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    const resultDiv = document.getElementById('gacha-result');
+
+    if (saveData.unlockedChars.includes(picked)) {
+        saveData.gold += 100; resultDiv.style.color = "#eccc68"; resultDiv.innerText = `被り：${charNamesJp[picked]} (100🔴返還)`;
+    } else {
+        saveData.unlockedChars.push(picked); resultDiv.style.color = "#2ed573"; resultDiv.innerText = `🎉 新解放：${charNamesJp[picked]}`;
+    }
+    saveGame(); updateMenuUI();
 }
 
 function buyPermanent(type) {
     let cost = getCost(type, saveData[type === 'atk' ? 'upAtk' : 'upHp']);
     if (saveData.gold >= cost) {
-        saveData.gold -= cost;
-        if (type === 'atk') saveData.upAtk++; else if (type === 'hp') saveData.upHp++;
+        saveData.gold -= cost; if (type === 'atk') saveData.upAtk++; else if (type === 'hp') saveData.upHp++;
         saveGame(); updateMenuUI();
     }
 }
 
 let selectedCharType = 'reimu';
 function selectChar(type) {
+    if (!saveData.unlockedChars.includes(type)) return;
     selectedCharType = type;
     document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`char-${type}`).classList.add('selected');
+    document.getElementById('selected-char-name').innerText = charNamesJp[type];
 }
 
+// --- 🎮 ゲームシステム変数 ---
 let gameActive = false, score = 0, level = 1, exp = 0, nextExp = 5, surviveTime = 0, goldEarned = 0;
 const camera = { x: 0, y: 0 };
 let player = {}, bullets = [], enemies = [], gems = [], particles = [], spawnTimer = 0;
 const keys = {};
 
-// --- 📱 スマホ用タッチ移動処理 ---
+// スペカ・ギミックタイマー
+let spellCooldown = 0, spellActiveTimer = 0, marisaLaserDirection = 1, sakuyaTimeStopActive = false;
+
+// サブウェポン＆🌟キャラ別固有能力レベル
+let subWeapons = { garlic: 0, book: 0, thunder: 0 };
+let personalSkillLevel = 0; // 🌟固有能力の現在のレベル(最大2)
+let thunderTimer = 0;
+
+// 咲夜の固有ナイフオブジェクト群
+let sakuyaDollKnives = [];
+// 妖夢の半霊データ
+let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
+
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
 
 touchOverlay.addEventListener('touchstart', e => {
-    isTouching = true; const t = e.touches[0];
-    touchStart.x = t.clientX; touchStart.y = t.clientY;
-    touchCurrent.x = t.clientX; touchCurrent.y = t.clientY;
+    isTouching = true; const t = e.touches[0]; touchStart.x = t.clientX; touchStart.y = t.clientY; touchCurrent.x = t.clientX; touchCurrent.y = t.clientY;
 });
 touchOverlay.addEventListener('touchmove', e => {
-    if (!isTouching) return; const t = e.touches[0];
-    touchCurrent.x = t.clientX; touchCurrent.y = t.clientY;
-    let dx = touchCurrent.x - touchStart.x, dy = touchCurrent.y - touchStart.y;
-    let dist = Math.hypot(dx, dy);
-    if (dist > 10) { touchMoveVector.x = dx / dist; touchMoveVector.y = dy / dist; } 
-    else { touchMoveVector.x = 0; touchMoveVector.y = 0; }
+    if (!isTouching) return; const t = e.touches[0]; touchCurrent.x = t.clientX; touchCurrent.y = t.clientY;
+    let dx = touchCurrent.x - touchStart.x, dy = touchCurrent.y - touchStart.y; let dist = Math.hypot(dx, dy);
+    if (dist > 10) { touchMoveVector.x = dx / dist; touchMoveVector.y = dy / dist; } else { touchMoveVector.x = 0; touchMoveVector.y = 0; }
 });
 touchOverlay.addEventListener('touchend', () => { isTouching = false; touchMoveVector.x = 0; touchMoveVector.y = 0; });
 
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
-    if (e.key === 'Escape' && gameActive) { triggerPause(); }
+    if (e.key === 'escape' && gameActive) triggerPause();
+    if (e.key === ' ' && gameActive) { e.preventDefault(); activateSpellCard(); }
 });
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+function activateSpellCard() {
+    if (spellCooldown > 0 || !gameActive) return;
+    spellCooldown = 1800; // 30秒
+    
+    if (player.type === 'reimu') {
+        createParticles(player.x, player.y, '#ff4757', 30);
+        enemies.forEach(e => { e.hp -= player.damage * 4; createParticles(e.x, e.y, '#ff4d4d', 5); });
+    } else if (player.type === 'marisa') {
+        spellActiveTimer = 150; marisaLaserDirection = player.lastDirX > 0 ? 1 : -1; 
+    } else if (player.type === 'youmu') {
+        spellActiveTimer = 300; 
+    } else if (player.type === 'sakuya') {
+        spellActiveTimer = 300; sakuyaTimeStopActive = true;
+    } else if (player.type === 'reisen') {
+        spellActiveTimer = 45; createParticles(player.x, player.y, '#a55eea', 50);
+        enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < 350) { e.hp -= player.damage * 6; createParticles(e.x, e.y, '#fff', 6); } });
+    }
+}
 
 function triggerPause() {
     gameActive = false; uiTitle.innerText = "戦術一時停止"; uiOptions.innerHTML = "";
     const resumeBtn = document.createElement('button'); resumeBtn.className = 'btn'; resumeBtn.innerText = '戦線に復帰';
     resumeBtn.onclick = () => { uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
     const exitBtn = document.createElement('button'); exitBtn.className = 'btn'; exitBtn.innerText = '里へ退却';
-    exitBtn.onclick = () => { exitGameToMenu(); };
+    exitBtn.onclick = () => exitGameToMenu();
     uiOptions.appendChild(resumeBtn); uiOptions.appendChild(exitBtn); uiLayer.style.display = 'flex';
 }
 
@@ -270,41 +406,88 @@ function exitGameToMenu() {
     document.getElementById('mainMenu').style.display = 'block'; updateMenuUI();
 }
 
-const upgrades = [
-    { name: '🔮 弾幕の同時発射数・密度を増幅 (+1)', effect: () => player.multishot += 1 },
-    { name: '⚡ 攻撃頻度を上昇 (攻撃速度 +30%)', effect: () => player.attackSpeed += 0.3 },
-    { name: '💥 霊力限界突破 (与ダメージ +8)', effect: () => player.damage += 8 },
-    { name: '🧲 アイテム回収の霊気範囲拡大 (+70)', effect: () => player.magnetRange += 70 },
-    { name: '💖 御神酒の癒やし (HPを大きく回復)', effect: () => player.hp = Math.min(player.maxHp, player.hp + 65) }
-];
+// 🌟 動的開花選択肢（汎用＋サブ武器＋キャラ固有スキル）
+function getUpgradeOptions() {
+    let list = [
+        { name: '🔮 弾幕増幅 (同時発射数 +1)', effect: () => player.multishot += 1 },
+        { name: '⚡ 連射力向上 (攻撃速度 +30%)', effect: () => player.attackSpeed += 0.3 },
+        { name: '💥 霊力限界突破 (与ダメ +8)', effect: () => player.damage += 8 },
+        { name: '🧲 霊気範囲拡大 (吸い込み +70)', effect: () => player.magnetRange += 70 },
+        { name: '💖 御神酒の癒やし (HPを65回復)', effect: () => player.hp = Math.min(player.maxHp, player.hp + 65) },
+        
+        // ヴァンサバサブ武器
+        { name: subWeapons.garlic === 0 ? '🧄 習得：妖々夢の怪火' : `🧄 強化：妖々夢の怪火 (Lv.${subWeapons.garlic + 1})`, effect: () => subWeapons.garlic++ },
+        { name: subWeapons.book === 0 ? '📖 習得：魔導書「ラジカルキマイラ」' : `📖 強化：魔導書 (Lv.${subWeapons.book + 1})`, effect: () => subWeapons.book++ },
+        { name: subWeapons.thunder === 0 ? '⚡ 習得：聖喇の雷撃' : `⚡ 強化：聖喇の雷撃 (Lv.${subWeapons.thunder + 1})`, effect: () => subWeapons.thunder++ }
+    ];
+
+    // 🌟 確率で各キャラクター固有の専用アビリティが出現
+    if (personalSkillLevel < 2 && Math.random() < 0.45) {
+        let pNames = {
+            reimu: ['☯️ 習得：博麗の結界 (領域内進入禁止防壁)', '☯️ 強化：博麗の結界 (展開領域をさらに拡大)'],
+            marisa: ['🧹 習得：ミニ八卦炉・暴走 (通常星弾が貫通化)', '🧹 強化：ミニ八卦炉・暴走 (貫通星弾が1.5倍超巨大化)'],
+            youmu: ['🌸 習得：人魂「半分幻の庭師」 (半霊が自動追尾攻撃開始)', '🌸 強化：半霊「半分幻の庭師」 (半霊の追尾戦闘力が2倍化)'],
+            sakuya: ['⏳ 習得：殺人ドール (画面跳弾ナイフが永続巡回)', '⏳ 強化：殺人ドール (跳弾ナイフの巡回数が2倍に増加)'],
+            reisen: ['👁️ 習得：幻朧月睨 (狂気波動による全周囲斥力)', '👁️ 強化：幻朧月睨 (錯乱波のダメージと衝撃力が極大化)']
+        };
+        list.push({
+            name: pNames[player.type][personalSkillLevel],
+            effect: () => {
+                personalSkillLevel++;
+                if (player.type === 'sakuya') {
+                    // 咲夜固有殺人ドール起動
+                    let knifeCount = personalSkillLevel === 1 ? 4 : 8;
+                    sakuyaDollKnives = [];
+                    for(let i=0; i<knifeCount; i++) {
+                        let ang = (Math.PI * 2 / knifeCount) * i;
+                        sakuyaDollKnives.push({ x: player.x, y: player.y, vx: Math.cos(ang)*7, vy: Math.sin(ang)*7 });
+                    }
+                }
+            }
+        });
+    }
+
+    return list.sort(() => 0.5 - Math.random()).slice(0, 3);
+}
 
 function startGame() {
     document.getElementById('mainMenu').style.display = 'none';
     gameContainer.style.display = 'block';
+    document.getElementById('gacha-result').innerText = "";
 
-    // 📱 画面の向きを判定して解像度を動的に書き換える
-    if (window.innerHeight > window.innerWidth) {
-        canvas.width = 580; canvas.height = 960; // 縦長スマホ画面
-    } else {
-        canvas.width = 960; canvas.height = 580; // PC横長画面
-    }
+    if (window.innerHeight > window.innerWidth) { canvas.width = 580; canvas.height = 960; } 
+    else { canvas.width = 960; canvas.height = 580; }
 
     player = { x: canvas.width/2, y: canvas.height/2, size: 32, shootCooldown: 0, multishot: 1, magnetRange: 140, type: selectedCharType, animTimer: 0, lastDirX: 1, isMoving: false };
 
-    if (selectedCharType === 'reimu') { player.maxHp = 100 + (saveData.upHp * 25); player.damage = 16 + (saveData.upAtk * 4); player.speed = 4.3; player.attackSpeed = 1.4; }
-    else if (selectedCharType === 'marisa') { player.maxHp = 85 + (saveData.upHp * 25); player.damage = 20 + (saveData.upAtk * 4); player.speed = 5.2; player.attackSpeed = 1.8; }
-    else if (selectedCharType === 'youmu') { player.maxHp = 120 + (saveData.upHp * 25); player.damage = 18 + (saveData.upAtk * 4); player.speed = 4.6; player.attackSpeed = 1.5; }
+    if (selectedCharType === 'reimu') { player.maxHp = 100; player.damage = 16; player.speed = 4.3; player.attackSpeed = 1.4; }
+    else if (selectedCharType === 'marisa') { player.maxHp = 85; player.damage = 22; player.speed = 5.2; player.attackSpeed = 1.8; }
+    else if (selectedCharType === 'youmu') { player.maxHp = 120; player.damage = 18; player.speed = 4.6; player.attackSpeed = 1.5; }
+    else if (selectedCharType === 'sakuya') { player.maxHp = 95; player.damage = 15; player.speed = 4.8; player.attackSpeed = 2.2; } // 性能微調整
+    else if (selectedCharType === 'reisen') { player.maxHp = 110; player.damage = 20; player.speed = 4.2; player.attackSpeed = 1.3; }
 
+    player.maxHp += (saveData.upHp * 25); player.damage += (saveData.upAtk * 4);
     player.hp = player.maxHp; score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
-    bullets = []; enemies = []; gems = []; particles = []; spawnTimer = 0;
+    bullets = []; enemies = []; gems = []; particles = []; spawnTimer = 0; spellCooldown = 0; spellActiveTimer = 0;
+    sakuyaTimeStopActive = false; subWeapons = { garlic: 0, book: 0, thunder: 0 }; personalSkillLevel = 0; thunderTimer = 0;
+    sakuyaDollKnives = []; youmuHalfGhost = { x: player.x, y: player.y, angle: 0, attackCooldown: 0 };
+
     gameActive = true; updateLoop();
 }
 
 function updateLoop() {
     if (!gameActive) return;
     surviveTime += 1 / 60; player.animTimer++;
-    let dx = 0, dy = 0;
+    
+    if (spellCooldown > 0) { spellCooldown--; bombBtn.disabled = true; bombCdText.innerText = `${Math.ceil(spellCooldown/60)}s`; } 
+    else { bombBtn.disabled = false; bombCdText.innerText = "READY"; }
+    
+    if (spellActiveTimer > 0) {
+        spellActiveTimer--; if (spellActiveTimer <= 0) sakuyaTimeStopActive = false;
+    }
 
+    // 移動処理
+    let dx = 0, dy = 0;
     if (keys['arrowup'] || keys['w']) dy -= 1;
     if (keys['arrowdown'] || keys['s']) dy += 1;
     if (keys['arrowleft'] || keys['a']) dx -= 1;
@@ -315,17 +498,102 @@ function updateLoop() {
 
     player.isMoving = (dx !== 0 || dy !== 0);
     if (dx !== 0) player.lastDirX = dx;
-    player.x += dx * player.speed; player.y += dy * player.speed;
+    
+    let currentSpeed = player.speed;
+    if (player.type === 'youmu' && spellActiveTimer > 0) currentSpeed *= 1.8;
+    
+    player.x += dx * currentSpeed; player.y += dy * currentSpeed;
     camera.x = player.x - canvas.width / 2; camera.y = player.y - canvas.height / 2;
 
-    if (player.type === 'youmu') {
-        bullets = bullets.filter(b => b.type !== 'slash'); 
-        for (let i = 0; i < player.multishot; i++) {
-            let angle = (player.animTimer * 0.06) + (i * (Math.PI * 2 / player.multishot));
-            bullets.push({ x: player.x + Math.cos(angle) * 85, y: player.y + Math.sin(angle) * 85, vx: 0, vy: 0, damage: player.damage * 0.75, type: 'slash', size: 36 });
+    // 🌟 優曇華固有：幻朧月睨 (全方位斥力精神錯乱波)
+    if (player.type === 'reisen' && personalSkillLevel > 0 && !sakuyaTimeStopActive && player.animTimer % 100 === 0) {
+        let waveRadius = personalSkillLevel === 1 ? 160 : 250;
+        let waveDmg = personalSkillLevel === 1 ? player.damage : player.damage * 2;
+        enemies.forEach(e => {
+            let d = Math.hypot(e.x - player.x, e.y - player.y);
+            if (d < waveRadius) {
+                e.hp -= waveDmg;
+                let pushAng = Math.atan2(e.y - player.y, e.x - player.x);
+                e.x += Math.cos(pushAng) * 45; e.y += Math.sin(pushAng) * 45; // 強く吹き飛ばす
+                createParticles(e.x, e.y, '#a55eea', 3);
+            }
+        });
+    }
+
+    // 🌟 咲夜固有：殺人ドールの跳弾ナイフ処理
+    if (player.type === 'sakuya' && personalSkillLevel > 0) {
+        sakuyaDollKnives.forEach(k => {
+            if (!sakuyaTimeStopActive) { k.x += k.vx; k.y += k.vy; }
+            // 擬似的にカメラ限界近辺で跳ね返る
+            if (Math.abs(k.x - player.x) > 460) k.vx *= -1;
+            if (Math.abs(k.y - player.y) > 280) k.vy *= -1;
+
+            enemies.forEach(e => {
+                if (Math.hypot(e.x - k.x, e.y - k.y) < enemy.size * 0.6) {
+                    e.hp -= player.damage * 0.4; createParticles(e.x, e.y, '#74b9ff', 1);
+                }
+            });
+        });
+    }
+
+    // 🌟 妖夢固有：半霊独立攻撃システム
+    if (player.type === 'youmu' && personalSkillLevel > 0) {
+        youmuHalfGhost.angle += 0.03;
+        // プレイヤーの周囲を浮遊
+        let targetGx = player.x + Math.cos(youmuHalfGhost.angle) * 60;
+        let targetGy = player.y + Math.sin(youmuHalfGhost.angle) * 60;
+        youmuHalfGhost.x += (targetGx - youmuHalfGhost.x) * 0.1;
+        youmuHalfGhost.y += (targetGy - youmuHalfGhost.y) * 0.1;
+
+        if (enemies.length > 0 && !sakuyaTimeStopActive) {
+            youmuHalfGhost.attackCooldown--;
+            if (youmuHalfGhost.attackCooldown <= 0) {
+                youmuHalfGhost.attackCooldown = personalSkillLevel === 1 ? 25 : 12;
+                // 最も近い敵へ突撃突風波を撃ち出す
+                let nearest = enemies[0]; let nearD = Math.hypot(enemies[0].x - youmuHalfGhost.x, enemies[0].y - youmuHalfGhost.y);
+                enemies.forEach(e => { let d = Math.hypot(e.x - youmuHalfGhost.x, e.y - youmuHalfGhost.y); if (d < nearD) { nearD = d; nearest = e; } });
+                let ghostAng = Math.atan2(nearest.y - youmuHalfGhost.y, nearest.x - youmuHalfGhost.x);
+                bullets.push({ x: youmuHalfGhost.x, y: youmuHalfGhost.y, vx: Math.cos(ghostAng)*12, vy: Math.sin(ghostAng)*12, damage: player.damage * 0.6, type: 'ghost_wave', size: 18 });
+            }
         }
     }
 
+    // サブ武器：🧄にんにく（怪火オーラ）
+    if (subWeapons.garlic > 0 && !sakuyaTimeStopActive && player.animTimer % 10 === 0) {
+        let radius = 50 + subWeapons.garlic * 15; let dmg = 2 + subWeapons.garlic * 2;
+        enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < radius) { e.hp -= dmg; createParticles(e.x, e.y, '#2ed573', 1); } });
+    }
+
+    // サブ武器：📖本（ぐるぐる魔導書）
+    bullets = bullets.filter(b => b.type !== 'book' && b.type !== 'slash');
+    if (subWeapons.book > 0) {
+        let count = subWeapons.book + 1; let radius = 90 + subWeapons.book * 10;
+        for (let i = 0; i < count; i++) {
+            let angle = (player.animTimer * 0.04) + (i * (Math.PI * 2 / count));
+            bullets.push({ x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius, vx: 0, vy: 0, damage: 4 + subWeapons.book * 3, type: 'book', size: 20 });
+        }
+    }
+
+    // サブ武器：⚡雷撃
+    if (subWeapons.thunder > 0 && !sakuyaTimeStopActive) {
+        thunderTimer++; let interval = Math.max(20, 90 - subWeapons.thunder * 10);
+        if (thunderTimer >= interval && enemies.length > 0) {
+            thunderTimer = 0; let target = enemies[Math.floor(Math.random() * enemies.length)];
+            target.hp -= (25 + subWeapons.thunder * 15); createParticles(target.x, target.y, '#eccc68', 15);
+        }
+    }
+
+    // 妖夢メイン剣気生成
+    if (player.type === 'youmu') {
+        let slashSize = (spellActiveTimer > 0) ? 75 : 36; 
+        for (let i = 0; i < player.multishot; i++) {
+            let angle = (player.animTimer * 0.06) + (i * (Math.PI * 2 / player.multishot));
+            let radius = (spellActiveTimer > 0) ? 140 : 85;
+            bullets.push({ x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius, vx: 0, vy: 0, damage: player.damage * 0.75, type: 'slash', size: slashSize });
+        }
+    }
+
+    // メイン攻撃オート射出
     if (player.shootCooldown <= 0 && enemies.length > 0) {
         player.shootCooldown = 60 / player.attackSpeed;
         let target = enemies[0]; let minDist = Math.hypot(enemies[0].x - player.x, enemies[0].y - player.y);
@@ -333,19 +601,36 @@ function updateLoop() {
         let baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
 
         if (player.type === 'reimu') {
+            let baseDmgMultiplier = (personalSkillLevel > 0) ? 2.0 : 1.0; // 🌟霊夢固有：結界による威力強化
             for (let i = 0; i < player.multishot; i++) {
                 let angle = baseAngle + (i - (player.multishot-1)/2) * 0.25;
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 11, vy: Math.sin(angle) * 11, damage: player.damage, type: 'amulet', size: 16 });
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 11, vy: Math.sin(angle) * 11, damage: player.damage * baseDmgMultiplier, type: 'amulet', size: 16 });
             }
         } else if (player.type === 'marisa') {
+            let isPenetrate = (personalSkillLevel > 0); // 🌟魔理沙固有：八卦炉暴走による貫通化
+            let starSize = (personalSkillLevel === 2) ? 30 : 18;
             let moveAngle = player.lastDirX > 0 ? 0 : Math.PI;
             for (let i = 0; i < player.multishot; i++) {
                 let angle = moveAngle + (i - (player.multishot-1)/2) * 0.2;
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 15, vy: Math.sin(angle) * 15, damage: player.damage * 0.85, type: 'star', size: 18 });
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 15, vy: Math.sin(angle) * 15, damage: player.damage * 0.85, type: 'star', size: starSize, penetrate: isPenetrate });
+            }
+        } else if (player.type === 'sakuya') {
+            // 🌟【完全大修正】動いていなくても最も近い敵へ確実に飛ぶように補正！
+            let finalAngle = baseAngle;
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = finalAngle + (i - (player.multishot-1)/2) * 0.15;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 18, vy: Math.sin(angle) * 18, damage: player.damage * 0.9, type: 'knife', size: 14 });
+            }
+        } else if (player.type === 'reisen') {
+            for (let i = 0; i < player.multishot; i++) {
+                let offset = (i - (player.multishot-1)/2) * 12;
+                bullets.push({ x: player.x + offset, y: player.y, vx: player.lastDirX * 14, vy: 0, damage: player.damage * 1.1, type: '座薬', size: 20 });
+                bullets.push({ x: player.x - offset, y: player.y, vx: -player.lastDirX * 14, vy: 0, damage: player.damage * 0.7, type: '座薬', size: 20 });
             }
         }
     } else { player.shootCooldown--; }
 
+    // 弾の更新
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
         if (b.type === 'amulet' && enemies.length > 0) {
@@ -356,34 +641,76 @@ function updateLoop() {
             curAngle += diff * 0.22; b.vx = Math.cos(curAngle) * 11; b.vy = Math.sin(curAngle) * 11;
         }
         b.x += b.vx; b.y += b.vy;
-        if (b.type !== 'slash' && Math.hypot(b.x - player.x, b.y - player.y) > 850) bullets.splice(i, 1);
+        if (b.type !== 'slash' && b.type !== 'book' && Math.hypot(b.x - player.x, b.y - player.y) > 850) { bullets.splice(i, 1); }
     }
 
-    spawnTimer++; const spawnRate = Math.max(7, 32 - Math.floor(surviveTime / 16));
-    if (spawnTimer % spawnRate === 0) {
-        const angle = Math.random() * Math.PI * 2; const isBoss = Math.random() < 0.06 + (surviveTime / 220); const size = isBoss ? 55 : 26;
-        enemies.push({ x: player.x + Math.cos(angle) * 600, y: player.y + Math.sin(angle) * 600, size: size, hp: isBoss ? 210 + (surviveTime*8) : 9 + (surviveTime*1.4), maxHp: isBoss ? 210 + (surviveTime*8) : 9 + (surviveTime*1.4), speed: isBoss ? 1.5 : 2.4 + Math.random() * 0.7, isBoss: isBoss });
+    // 敵の生成
+    if (!sakuyaTimeStopActive) {
+        spawnTimer++; const spawnRate = Math.max(5, 28 - Math.floor(surviveTime / 12)); 
+        if (spawnTimer % spawnRate === 0) {
+            const angle = Math.random() * Math.PI * 2;
+            let size = 24, hp = 9 + (surviveTime * 1.5), speed = 2.4 + Math.random() * 0.6, isBoss = false, color = '#7f8c8d';
+            if (Math.random() < 0.05 + (surviveTime / 250) || spawnTimer % 1800 === 0) { isBoss = true; size = 55; hp = 250 + (surviveTime * 12); speed = 1.3; color = '#8e44ad'; } 
+            else if (surviveTime > 120 && Math.random() < 0.4) { size = 20; hp = 15 + (surviveTime * 1.2); speed = 4.2; color = '#a55eea'; } 
+            else if (surviveTime > 60 && Math.random() < 0.5) { size = 32; hp = 35 + (surviveTime * 2.5); speed = 1.8; color = '#fed330'; }
+            let timeMultiplier = surviveTime > 180 ? 1.0 + (surviveTime - 180) * 0.015 : 1.0;
+            enemies.push({ x: player.x + Math.cos(angle) * 600, y: player.y + Math.sin(angle) * 600, size: size, hp: hp, maxHp: hp, speed: speed * timeMultiplier, isBoss: isBoss, color: color, damageMultiplier: timeMultiplier });
+        }
     }
 
+    // 魔理沙レーザー
+    if (player.type === 'marisa' && spellActiveTimer > 0) {
+        let laserHeight = 110, laserWidth = 900;
+        let laserLeft = marisaLaserDirection > 0 ? player.x : player.x - laserWidth; let laserTop = player.y - laserHeight / 2;
+        enemies.forEach(enemy => {
+            if (enemy.x + enemy.size/2 > laserLeft && enemy.x - enemy.size/2 < laserLeft + laserWidth && enemy.y + enemy.size/2 > laserTop && enemy.y - enemy.size/2 < laserTop + laserHeight) {
+                enemy.hp -= player.damage * 0.8; createParticles(enemy.x, enemy.y, '#f1c40f', 1);
+            }
+        });
+    }
+
+    // 敵当たり判定
     for (let eIndex = enemies.length - 1; eIndex >= 0; eIndex--) {
-        const enemy = enemies[eIndex]; const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist > 0) { enemy.x += ((player.x - enemy.x) / dist) * enemy.speed; enemy.y += ((player.y - enemy.y) / dist) * enemy.speed; }
-        if (dist < (enemy.size * 0.45 + player.size * 0.4)) { player.hp -= enemy.isBoss ? 1.1 : 0.45; createParticles(enemy.x, enemy.y, '#ff4d4d', 1); if (player.hp <= 0) { gameOver(); return; } }
+        const enemy = enemies[eIndex];
+        
+        // 霊夢固有：結界による物理的押し出し判定
+        if (player.type === 'reimu' && personalSkillLevel > 0) {
+            let barrierR = personalSkillLevel === 1 ? 80 : 130;
+            let barrierDist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (barrierDist < barrierR) {
+                let pushA = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                enemy.x = player.x + Math.cos(pushA) * barrierR; enemy.y = player.y + Math.sin(pushA) * barrierR;
+            }
+        }
+
+        if (!sakuyaTimeStopActive) {
+            const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (dist > 0) { enemy.x += ((player.x - enemy.x) / dist) * enemy.speed; enemy.y += ((player.y - enemy.y) / dist) * enemy.speed; }
+        }
+
+        const distToPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if (distToPlayer < (enemy.size * 0.45 + player.size * 0.4) && !sakuyaTimeStopActive) {
+            if (!(player.type === 'youmu' && spellActiveTimer > 0)) {
+                player.hp -= (enemy.isBoss ? 1.3 : 0.5) * enemy.damageMultiplier; createParticles(enemy.x, enemy.y, '#ff4d4d', 1);
+                if (player.hp <= 0) { gameOver(); return; }
+            }
+        }
 
         for (let bIndex = bullets.length - 1; bIndex >= 0; bIndex--) {
             const b = bullets[bIndex];
             if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < (enemy.size * 0.5 + b.size * 0.5)) {
-                enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); if (b.type !== 'slash') bullets.splice(bIndex, 1);
-                if (enemy.hp <= 0) {
-                    enemies.splice(eIndex, 1); score += enemy.isBoss ? 500 : 40;
-                    gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 15 : 1, type: 'exp' }); 
-                    if (Math.random() < 0.6 || enemy.isBoss) gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 25 : 4, type: 'gold' }); 
-                    break;
-                }
+                enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); 
+                if (b.type !== 'slash' && b.type !== 'book' && !b.penetrate) bullets.splice(bIndex, 1);
             }
+        }
+
+        if (enemy.hp <= 0) {
+            enemies.splice(eIndex, 1); score += enemy.isBoss ? 500 : 40;
+            gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 15 : 1, type: 'exp' }); gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 25 : 4, type: 'gold' }); 
         }
     }
 
+    // ジェム
     for (let gIndex = gems.length - 1; gIndex >= 0; gIndex--) {
         const gem = gems[gIndex]; const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
         if (dist < player.magnetRange) { gem.x += ((player.x - gem.x) / dist) * 10; gem.y += ((player.y - gem.y) / dist) * 10; }
@@ -402,31 +729,107 @@ function createParticles(x, y, color, count = 3) { for (let i = 0; i < count; i+
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#141423'; ctx.lineWidth = 1; const spacing = 64;
+    
+    let bgGridColor = sakuyaTimeStopActive ? '#2c3e50' : (surviveTime > 180 ? '#3a1525' : (surviveTime > 60 ? '#192a20' : '#141423'));
+    ctx.strokeStyle = bgGridColor; ctx.lineWidth = 1; const spacing = 64;
     for (let x = Math.floor(camera.x / spacing) * spacing; x < camera.x + canvas.width + spacing; x += spacing) { ctx.beginPath(); ctx.moveTo(x - camera.x, 0); ctx.lineTo(x - camera.x, canvas.height); ctx.stroke(); }
     for (let y = Math.floor(camera.y / spacing) * spacing; y < camera.y + canvas.height + spacing; y += spacing) { ctx.beginPath(); ctx.moveTo(0, y - camera.y); ctx.lineTo(canvas.width, y - camera.y); ctx.stroke(); }
 
-    gems.forEach(gem => { ctx.save(); ctx.translate(gem.x - camera.x, gem.y - camera.y); if (gem.type === 'exp') { ctx.fillStyle = '#2e86de'; ctx.fillRect(-5, -5, 10, 10); } else { ctx.fillStyle = '#ff3838'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill(); } ctx.restore(); });
-    bullets.forEach(b => { ctx.save(); ctx.translate(b.x - camera.x, b.y - camera.y); if (b.type === 'amulet') { ctx.fillStyle = '#ff4d4d'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.fillRect(-4, -8, 8, 16); ctx.strokeRect(-4, -8, 8, 16); } else if (b.type === 'star') { ctx.fillStyle = '#f1c40f'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('★', 0, 0); } else if (b.type === 'slash') { let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2); grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#2ed573'); grad.addColorStop(1, 'rgba(46,213,115,0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); } ctx.restore(); });
-    enemies.forEach(enemy => { ctx.save(); ctx.translate(enemy.x - camera.x, enemy.y - camera.y); ctx.fillStyle = enemy.isBoss ? '#8e44ad' : '#7f8c8d'; ctx.beginPath(); ctx.arc(0, 0, enemy.size/2, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.arc(enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.fill(); ctx.restore(); });
+    // 🌟 霊夢固有：結界エフェクト
+    if (player.type === 'reimu' && personalSkillLevel > 0) {
+        ctx.save(); let bRadius = personalSkillLevel === 1 ? 80 : 130;
+        ctx.strokeStyle = 'rgba(255, 71, 87, 0.4)'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
+        ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, bRadius, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 71, 87, 0.04)'; ctx.fill(); ctx.restore();
+    }
 
+    // にんにく
+    if (subWeapons.garlic > 0) {
+        ctx.save(); let radius = 50 + subWeapons.garlic * 15;
+        let grad = ctx.createRadialGradient(player.x - camera.x, player.y - camera.y, radius*0.5, player.x - camera.x, player.y - camera.y, radius);
+        grad.addColorStop(0, 'rgba(46, 213, 115, 0)'); grad.addColorStop(0.7, 'rgba(46, 213, 115, 0.15)'); grad.addColorStop(1, 'rgba(46, 213, 115, 0)');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, radius, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    }
+
+    // 優曇華スペカ
+    if (player.type === 'reisen' && spellActiveTimer > 0) {
+        ctx.save(); ctx.strokeStyle = 'rgba(165, 94, 234, ' + (spellActiveTimer/45) + ')'; ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, 350 * (1 - spellActiveTimer/45), 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    }
+
+    gems.forEach(gem => { ctx.save(); ctx.translate(gem.x - camera.x, gem.y - camera.y); if (gem.type === 'exp') { ctx.fillStyle = '#2e86de'; ctx.fillRect(-5, -5, 10, 10); } else { ctx.fillStyle = '#ff3838'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill(); } ctx.restore(); });
+    
+    // 弾各種
+    bullets.forEach(b => { 
+        ctx.save(); ctx.translate(b.x - camera.x, b.y - camera.y); 
+        if (b.type === 'amulet') { ctx.fillStyle = '#ff4d4d'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.fillRect(-4, -8, 8, 16); ctx.strokeRect(-4, -8, 8, 16); } 
+        else if (b.type === 'star') { ctx.fillStyle = '#f1c40f'; ctx.font = `bold ${b.size + 4}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('★', 0, 0); } 
+        else if (b.type === 'knife' || b.type === 'doll_knife') { ctx.fillStyle = '#dcdde1'; ctx.strokeStyle = '#7f8c8d'; ctx.lineWidth = 1; ctx.fillRect(-2, -7, 4, 14); ctx.strokeRect(-2, -7, 4, 14); }
+        else if (b.type === '座薬') { ctx.fillStyle = '#ff4757'; ctx.beginPath(); ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI*2); ctx.fill(); }
+        else if (b.type === 'book') { ctx.fillStyle = '#9b59b6'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.fillRect(-8, -10, 16, 20); ctx.fillStyle = '#fff'; ctx.fillRect(2, -10, 2, 20); }
+        else if (b.type === 'slash') { let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2); grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#2ed573'); grad.addColorStop(1, 'rgba(46,213,115,0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); }
+        else if (b.type === 'ghost_wave') { ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.strokeStyle = '#2ed573'; ctx.beginPath(); ctx.arc(0,0, b.size/2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
+        ctx.restore(); 
+    });
+
+    // 🌟 咲夜固有：殺人ドールの巡回ナイフ直接描画
+    if (player.type === 'sakuya' && personalSkillLevel > 0) {
+        sakuyaDollKnives.forEach(k => {
+            ctx.save(); ctx.translate(k.x - camera.x, k.y - camera.y);
+            ctx.fillStyle = '#74b9ff'; ctx.strokeStyle = '#fff'; ctx.fillRect(-3, -8, 6, 16); ctx.strokeRect(-3, -8, 6, 16); ctx.restore();
+        });
+    }
+
+    // マスタースパーク
+    if (player.type === 'marisa' && spellActiveTimer > 0) {
+        ctx.save(); let lHeight = 110 + Math.sin(player.animTimer * 0.4) * 15, lWidth = 960;
+        let lX = marisaLaserDirection > 0 ? player.x - camera.x : player.x - camera.x - lWidth; let lY = player.y - camera.y - lHeight / 2;
+        let grad = ctx.createLinearGradient(0, lY, 0, lY + lHeight); grad.addColorStop(0, 'rgba(255, 159, 67, 0)'); grad.addColorStop(0.2, '#ff9f43'); grad.addColorStop(0.5, '#fff'); grad.addColorStop(0.8, '#f1c40f'); grad.addColorStop(1, 'rgba(255, 159, 67, 0)');
+        ctx.fillStyle = grad; ctx.fillRect(lX, lY, lWidth, lHeight); ctx.fillStyle = '#ffffff'; ctx.fillRect(lX, lY + lHeight*0.35, lWidth, lHeight*0.3); ctx.restore();
+    }
+    
+    // 敵
+    enemies.forEach(enemy => { 
+        ctx.save(); ctx.translate(enemy.x - camera.x, enemy.y - camera.y); 
+        ctx.fillStyle = sakuyaTimeStopActive ? '#555' : enemy.color; ctx.beginPath(); ctx.arc(0, 0, enemy.size/2, 0, Math.PI*2); ctx.fill(); 
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.arc(enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.fill(); ctx.restore(); 
+    });
+
+    // 🌟 妖夢固有：浮遊する半霊の描画
+    if (player.type === 'youmu' && personalSkillLevel > 0) {
+        ctx.save(); ctx.translate(youmuHalfGhost.x - camera.x, youmuHalfGhost.y - camera.y);
+        ctx.fillStyle = 'rgba(245, 246, 250, 0.85)'; ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
+        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    }
+
+    // プレイヤー本体
     ctx.save(); ctx.translate(player.x - camera.x, player.y - camera.y); if (player.lastDirX < 0) ctx.scale(-1, 1);
     const bob = Math.sin(player.animTimer * 0.12) * 2;
+    if (player.type === 'youmu' && spellActiveTimer > 0) ctx.globalAlpha = 0.6 + Math.sin(player.animTimer*0.5)*0.3;
+    
     if (imageLoaded[player.type]) { ctx.imageSmoothingEnabled = false; ctx.drawImage(charImages[player.type], -player.size/2, -player.size/2 + bob, player.size, player.size); } 
-    else { ctx.fillStyle = player.type === 'reimu' ? '#ff4d4d' : player.type === 'marisa' ? '#f1c40f' : '#2ed573'; ctx.beginPath(); ctx.arc(0, bob, player.size/2, 0, Math.PI*2); fill(); }
-    ctx.restore();
+    else { 
+        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea' };
+        ctx.fillStyle = colors[player.type]; ctx.beginPath(); ctx.arc(0, bob, player.size/2, 0, Math.PI*2); ctx.fill(); 
+    }
+    ctx.restore(); ctx.globalAlpha = 1.0;
+    
     particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fillRect(p.x - camera.x, p.y - camera.y, 4, 4); ctx.globalAlpha = 1.0; });
 
-    // 👑 パラメータ表示を「左側」に完全にまとめてボタンとの衝突を回避
+    // UI
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(20, 20, canvas.width - 40, 10, 5); ctx.fill();
     ctx.fillStyle = '#2e86de'; ctx.beginPath(); ctx.roundRect(20, 20, (canvas.width - 40) * Math.min(1, exp / nextExp), 10, 5); ctx.fill();
     
     ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff';
-    ctx.fillText(`Lv. ${level}`, 20, 55); 
-    ctx.fillText(`SCORE: ${score}`, 20, 77); 
-    ctx.fillStyle = '#ffcc00'; ctx.fillText(`POWER: ${goldEarned}`, 20, 99);
-    ctx.fillStyle = '#a4b0be'; const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0'); ctx.fillText(`TIME: ${min}:${sec}`, 20, 121);
+    ctx.fillText(`Lv. ${level}`, 20, 55); ctx.fillText(`SCORE: ${score}`, 20, 77); ctx.fillStyle = '#ffcc00'; ctx.fillText(`POINT: ${goldEarned}`, 20, 99); ctx.fillStyle = '#a4b0be'; const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0'); ctx.fillText(`TIME: ${min}:${sec}`, 20, 121);
     
+    let swText = "SKILL: ";
+    if (subWeapons.garlic > 0) swText += `🧄Lv.${subWeapons.garlic} `;
+    if (subWeapons.book > 0) swText += `📖Lv.${subWeapons.book} `;
+    if (subWeapons.thunder > 0) swText += `⚡Lv.${subWeapons.thunder} `;
+    if (personalSkillLevel > 0) swText += `⭐固有Lv.${personalSkillLevel} `;
+    ctx.fillStyle = '#2ed573'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(swText, 20, 142);
+
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(20, canvas.height - 35, 220, 16, 8); ctx.fill();
     ctx.fillStyle = '#ff4757'; ctx.beginPath(); ctx.roundRect(20, canvas.height - 35, 220 * Math.max(0, player.hp / player.maxHp), 16, 8); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.fillText(`LIFE: ${Math.ceil(player.hp)}/${player.maxHp}`, 32, canvas.height - 23);
@@ -434,8 +837,9 @@ function draw() {
 
 function levelUp() {
     gameActive = false; level++; exp -= nextExp; nextExp = Math.floor(nextExp * 1.5) + 4;
-    uiTitle.innerText = `能力開花 (Lv.${level})`; uiOptions.innerHTML = ""; const shuffled = [...upgrades].sort(() => 0.5 - Math.random()).slice(0, 3);
-    shuffled.forEach(upgrade => {
+    uiTitle.innerText = `能力開花 (Lv.${level})`; uiOptions.innerHTML = ""; 
+    const options = getUpgradeOptions();
+    options.forEach(upgrade => {
         const btn = document.createElement('button'); btn.className = 'btn'; btn.innerText = upgrade.name;
         btn.onclick = () => { upgrade.effect(); uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
         uiOptions.appendChild(btn);
@@ -446,7 +850,7 @@ function levelUp() {
 function gameOver() {
     gameActive = false; uiTitle.innerText = "満身創痍"; saveData.gold += goldEarned; saveGame();
     const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0');
-    uiOptions.innerHTML = `<p style="margin:5px 0; font-size:16px;">リザルト</p><p style="margin:5px 0; font-size:14px;">防衛時間: ${min}分${sec}秒</p><p style="margin:5px 0; font-size:14px;">回収Pアイテム: <span class="p-text">+${goldEarned}</span> 🔴</p>`;
+    uiOptions.innerHTML = `<p style="margin:5px 0; font-size:16px;">リザルト</p><p style="margin:5px 0; font-size:14px;">防衛時間: ${min}分${sec}秒</p><p style="margin:5px 0; font-size:14px;">回収POINT: <span class="p-text">+${goldEarned}</span> 🔴</p>`;
     const menuBtn = document.createElement('button'); menuBtn.className = 'btn'; menuBtn.innerText = '里へ戻る';
     menuBtn.onclick = () => { uiLayer.style.display = 'none'; gameContainer.style.display = 'none'; document.getElementById('mainMenu').style.display = 'block'; updateMenuUI(); };
     uiOptions.appendChild(menuBtn); uiLayer.style.display = 'flex';
