@@ -304,7 +304,6 @@
                     <h4 style="color:#54a0ff; margin:2px 0;">ロキシー・ミグルディア</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">絶対零度(範囲氷結) / 💥キュムロニンバス(画面全体雷雨爆撃)</p>
                 </div>
-                <!-- 👑 加藤純一のアップデート -->
                 <div class="card locked" id="char-kato" onclick="selectChar('kato')">
                     <span class="lock-badge" id="badge-kato">🔒 未解放</span>
                     <h4 style="color:#ffaa00; text-shadow:0 0 5px #ff4757; margin:2px 0;">加藤 純一</h4>
@@ -350,7 +349,7 @@ const charNamesJp = {
     sakuya: '十六夜 咲夜', 
     reisen: '鈴仙・優曇華院',
     gojou: '五条 悟',
-    roxy: 'ロキシー',
+    roxy: 'ロキシー・ミグルディア',
     kato: '加藤 純一'
 };
 
@@ -371,21 +370,20 @@ charImages.sakuya.src = 'sakuya.png';
 charImages.reisen.src = 'reisen.png';
 charImages.gojou.src = 'gojou.png'; 
 charImages.roxy.src = 'roxy.png';   
-charImages.kato.src = 'jun_2.png';   // 指定された素材画像を設定
+charImages.kato.src = 'jun.png';   // 画像アセットの割り当て
 
 let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false, kato: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
 
-// セーブデータ初期値
 let saveData = { gold: 0, upAtk: 0, upHp: 0, unlockedChars: ['reimu'], volBgm: 0.7, volSE: 0.7 };
 
-// --- 🎧 オーディオエンジン ---
+// --- オーディオエンジン ---
 let audioCtx = null;
 let bgmAudioElement = null;
 let bgmSourceNode = null;
 let bgmGainNode = null;
 let currentBgmPath = "";
-let katoVoiceElement = null; // 加藤純一スペカ専用ボイス再生用
+let katoVoiceElement = null;
 
 function initAudio() {
     if (!audioCtx) {
@@ -401,13 +399,11 @@ function initAudio() {
         bgmSourceNode.connect(bgmGainNode);
         bgmGainNode.connect(audioCtx.destination);
 
-        // 加藤純一音声要素のセットアップ
         katoVoiceElement = new Audio();
-        katoVoiceElement.src = 'beyond_voice.mp3'; // スペカ用音声ファイル名
+        katoVoiceElement.src = 'jun.mp3'; // ご指定の音声ファイルを適用
         katoVoiceElement.crossOrigin = "anonymous";
         const katoSource = audioCtx.createMediaElementSource(katoVoiceElement);
         const katoGain = audioCtx.createGain();
-        // SE音量設定と同期させる
         katoGain.gain.setValueAtTime(saveData.volSE * 1.5, audioCtx.currentTime); 
         katoSource.connect(katoGain);
         katoGain.connect(audioCtx.destination);
@@ -657,8 +653,6 @@ let reimuBarrierHp = 0, reimuBarrierMaxHp = 0, reimuBarrierCooldown = 0;
 let sakuyaDollKnives = [];
 let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
 let gojouMugenHp = 0, gojouMugenMaxHp = 0, gojouMugenCooldown = 0;
-
-// 加藤純一スペカ（ビヨンド）制御用の変数
 let katoBatSwingAngle = 0; 
 
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
@@ -698,14 +692,13 @@ function activateSpellCard() {
     spellCooldown = 1800; 
     
     if (player.type === 'kato') {
-        // 加藤純一固有：ボイス再生
         if (katoVoiceElement) {
             katoVoiceElement.currentTime = 0;
             katoVoiceElement.play().catch(e => console.log("Voice Play Error:", e));
         }
         createSynthSE('bomb');
-        spellActiveTimer = 60; // 60フレーム（約1秒）のフルスイング演出
-        katoBatSwingAngle = player.lastDirX > 0 ? -Math.PI * 0.6 : Math.PI * 1.6; // スイング開始角度
+        spellActiveTimer = 60; 
+        katoBatSwingAngle = player.lastDirX > 0 ? -Math.PI * 0.6 : Math.PI * 1.6; 
     } else {
         createSynthSE('bomb'); 
     }
@@ -1006,9 +999,9 @@ function updateLoop() {
         }
     }
 
-    // --- 加藤純一：パワフルな「ビヨンド」スペカ稼働処理 ---
+    // --- 加藤純一：ビヨンドマックスのパワフル薙ぎ払い処理 ---
     if (player.type === 'kato' && spellActiveTimer > 0) {
-        let batLength = 340; // ビヨンドの超巨大なリーチ
+        let batLength = 340; 
         let sweepSpeed = player.lastDirX > 0 ? 0.08 : -0.08; 
         katoBatSwingAngle += sweepSpeed;
 
@@ -1016,14 +1009,12 @@ function updateLoop() {
             let enemyAngle = Math.atan2(e.y - player.y, e.x - player.x);
             let dist = Math.hypot(e.x - player.x, e.y - player.y);
             
-            // バットの攻撃判定内に敵が入っているか判定
             let angleDiff = Math.abs(enemyAngle - katoBatSwingAngle);
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             angleDiff = Math.abs(angleDiff);
 
             if (dist < batLength && angleDiff < 0.4) {
-                e.hp -= player.damage * 1.5; // 超高火力
-                // 豪快なノックバック（外側＆スイング方向へ吹き飛ばす）
+                e.hp -= player.damage * 1.5; 
                 let pushDir = enemyAngle + (sweepSpeed * 2);
                 e.x += Math.cos(pushDir) * 22;
                 e.y += Math.sin(pushDir) * 22;
@@ -1279,7 +1270,7 @@ function draw() {
         } else if (b.type === 'ice') {
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#54a0ff'); grad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); fill();
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); // フリーズの原因（ctx.）を修正
         } else if (b.type === 'dogo') {
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#ff9f43'); grad.addColorStop(1, 'rgba(255,71,87,0)');
@@ -1302,33 +1293,31 @@ function draw() {
         ctx.fillStyle = grad; ctx.fillRect(lX, lY, lWidth, lHeight); ctx.fillStyle = '#ffffff'; ctx.fillRect(lX, lY + lHeight*0.35, lWidth, lHeight*0.3); ctx.restore();
     }
 
-    // --- 加藤純一：ビヨンドマックスのパワフルなスイング描画 ---
+    // --- 加藤純一：巨大バット描画 ---
     if (player.type === 'kato' && spellActiveTimer > 0) {
         ctx.save();
         ctx.translate(player.x - camera.x, player.y - camera.y);
         ctx.rotate(katoBatSwingAngle);
         
-        // 振り回される巨大ビヨンドバット本体の描画
         let bLen = 340;
         let gradBat = ctx.createLinearGradient(0, -12, bLen, 12);
         gradBat.addColorStop(0, '#2f3542');
         gradBat.addColorStop(0.2, '#747d8c');
-        gradBat.addColorStop(0.5, '#ffaa00');  // 黄金に輝く芯部分
-        gradBat.addColorStop(0.8, '#ff4757');  // 強烈なインパクトオーラ
+        gradBat.addColorStop(0.5, '#ffaa00');  
+        gradBat.addColorStop(0.8, '#ff4757');  
         gradBat.addColorStop(1, 'rgba(255,255,255,0)');
 
         ctx.fillStyle = gradBat;
         ctx.beginPath();
         ctx.moveTo(0, -6);
         ctx.lineTo(bLen * 0.3, -8);
-        ctx.lineTo(bLen, -25); // バットの先端（太い）
+        ctx.lineTo(bLen, -25); 
         ctx.lineTo(bLen, 25);
         ctx.lineTo(bLen * 0.3, 8);
         ctx.lineTo(0, 6);
         ctx.closePath();
         ctx.fill();
 
-        // 凄まじいスイングの残像（衝撃波）
         ctx.fillStyle = 'rgba(255, 170, 0, 0.15)';
         ctx.beginPath();
         ctx.arc(0, 0, bLen, -0.4, 0.4);
