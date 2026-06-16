@@ -48,18 +48,41 @@
             box-sizing: border-box;
         }
 
+        /* 📊 メインメニュー：横幅を少し広げて、要素を収まりやすく */
         .menu-window {
             background: rgba(15, 15, 25, 0.96);
             border: 3px solid #ff4757;
             padding: 20px;
             border-radius: 24px;
             text-align: center;
-            max-width: 420px;
-            width: 85%;
+            max-width: 650px;
+            width: 90%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.8);
             z-index: 20;
             max-height: 95vh;
             overflow-y: auto;
+        }
+
+        /* 📦 左右2カラムにするためのフレックスボックス */
+        .menu-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .menu-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* スマホ等の縦長画面では従来通り縦並びにする */
+        @media (max-width: 600px) {
+            .menu-layout {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
 
         .modal-layer {
@@ -104,6 +127,8 @@
         }
         .btn:disabled { border-color: #444; color: #666; background: #111; cursor: not-allowed; }
         .grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
+        
+        /* キャラ選択用のカード */
         .card { 
             border: 2px solid #2f3542; 
             padding: 10px; 
@@ -116,6 +141,7 @@
         .card.selected { border-color: #ff4757; background: #222536; box-shadow: 0 0 10px rgba(255,71,87,0.3); }
         .card.locked { opacity: 0.4; cursor: not-allowed; background: #08080f; }
         .lock-badge { position: absolute; top: 5px; right: 10px; color: #ff4757; font-size: 11px; font-weight: bold; }
+        
         .p-text { color: #ffcc00; font-weight: bold; font-size: 20px; }
         #controls { margin-top: 10px; color: #a4b0be; font-size: 11px; text-align: center; padding: 0 10px; }
         
@@ -162,70 +188,112 @@
         }
         #bomb-btn:disabled { background: #2f3542; border-color: #747d8c; color: #a4b0be; box-shadow: none; }
 
-        /* スライダー用装飾 */
         .volume-container {
-            background:#11121a; padding:10px; border-radius:14px; border:1px solid #2f3542; margin-top: 5px;
+            background:#11121a; padding:10px; border-radius:14px; border:1px solid #2f3542;
         }
         .volume-row {
-            display: flex; align-items: center; justify-content: space-between; margin: 6px 0; font-size: 13px;
+            display: flex; align-items: center; justify-content: space-between; margin: 4px 0; font-size: 13px;
         }
         .volume-row input[type="range"] {
-            width: 60%; accent-color: #ff4757; cursor: pointer;
+            width: 55%; accent-color: #ff4757; cursor: pointer;
         }
         .volume-val { width: 35px; text-align: right; color: #ffcc00; font-weight: bold; }
+
+        /* メインメニュー内の各セクション共通デザイン */
+        .menu-section {
+            background: #11121a;
+            border: 2px solid #2f3542;
+            padding: 12px;
+            border-radius: 16px;
+            text-align: left;
+            box-sizing: border-box;
+        }
+        .section-title {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #ffcc00;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
 
     <!-- メインメニュー -->
     <div id="mainMenu" class="menu-window">
-        <h1 style="color:#ff4757; margin-top:0; font-size: 22px; letter-spacing: 1px;">☯️ 東方生存郷 ☯️</h1>
-        <p style="font-size: 12px; color: #a4b0be; margin-top: -10px; font-style: italic;">~ Border of Survivors</p>
+        <h1 style="color:#ff4757; margin: 0; font-size: 22px; letter-spacing: 1px;">☯️ 東方生存郷 ☯️</h1>
+        <p style="font-size: 12px; color: #a4b0be; margin: 2px 0 10px 0; font-style: italic;">~ Border of Survivors</p>
         <p style="margin: 5px 0;">所持POINT: <span id="menuGold" class="p-text">0</span> 🔴</p>
         
-        <div style="background: rgba(255,204,0,0.1); border: 2px dashed #ffcc00; padding: 10px; border-radius: 16px; margin-bottom: 12px;">
-            <h4 style="margin: 0 0 5px 0; color:#ffcc00;">⛩️ 博麗神社 賽銭箱ガチャ</h4>
-            <button class="btn" id="btn-gacha" style="background:#ffcc00; color:#000; border:none; width:90%; margin:2px 0;" onclick="drawGacha()">ガチャを引く (消費: 200🔴)</button>
-            <div id="gacha-result" style="font-size:12px; margin-top:5px; font-weight:bold; height:15px; color:#2ed573;"></div>
-        </div>
-
-        <div style="background: #11121a; border: 2px solid #2f3542; padding: 12px; border-radius: 16px; margin-bottom: 12px; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span style="font-size: 12px; color: #a4b0be;">選択中の出撃キャラクター:</span>
-                    <div id="selected-char-name" style="font-size: 16px; font-weight: bold; color: #ff4757; margin-top: 2px;">博麗 霊夢</div>
+        <!-- 📦 ここから左右2カラムのレイアウト -->
+        <div class="menu-layout">
+            
+            <!-- ⬅️ 左カラム -->
+            <div class="menu-col">
+                <!-- ① ガチャ -->
+                <div class="menu-section" style="border-color: #ffcc00; background: rgba(255,204,0,0.03);">
+                    <h4 class="section-title">⛩️ 博麗神社 賽銭箱ガチャ</h4>
+                    <button class="btn" id="btn-gacha" style="background:#ffcc00; color:#000; border:none; width:100%; margin:4px 0; padding: 10px 0;" onclick="drawGacha()">ガチャを引く (200🔴)</button>
+                    <div id="gacha-result" style="font-size:11px; margin-top:3px; font-weight:bold; height:15px; text-align:center; color:#2ed573;"></div>
                 </div>
-                <button class="btn" style="padding: 6px 12px; font-size: 12px; margin: 0;" onclick="toggleCharModal(true)">仲間を募る ⛩️</button>
-            </div>
-        </div>
 
-        <h3 style="margin: 10px 0 5px 0; font-size:15px;">【2】 能力解放（永続強化）</h3>
-        <div style="font-size: 12px; background:#0b0c10; padding:10px; border-radius:14px; border:1px solid #2f3542;">
-            <div style="margin-bottom: 6px;">⚔️ 攻撃力 Lv.<span id="up-atk-lv">0</span> <button class="btn" style="padding:4px 10px; font-size:11px; margin-left:5px;" id="btn-up-atk" onclick="buyPermanent('atk')">消費: <span id="cost-atk">50</span>🔴</button></div>
-            <div>❤️ 体力倍率 Lv.<span id="up-hp-lv">0</span> <button class="btn" style="padding:4px 10px; font-size:11px; margin-left:5px;" id="btn-up-hp" onclick="buyPermanent('hp')">消費: <span id="cost-hp">50</span>🔴</button></div>
-        </div>
-
-        <!-- ⚙️ 音量設定（スライダー化） -->
-        <h3 style="margin: 15px 0 5px 0; font-size:14px; color: #a4b0be;">⚙️ 音量設定</h3>
-        <div class="volume-container">
-            <div class="volume-row">
-                <span>BGM:</span>
-                <input type="range" id="menu-slider-bgm" min="0" max="100" value="70" oninput="handleVolumeSlider('bgm', this.value)">
-                <span id="menu-val-bgm" class="volume-val">70%</span>
+                <!-- ② キャラクター選択 -->
+                <div class="menu-section">
+                    <h4 class="section-title" style="color: #74b9ff;">👥 出撃キャラクター</h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                        <div>
+                            <div id="selected-char-name" style="font-size: 16px; font-weight: bold; color: #ff4757;">博麗 霊夢</div>
+                        </div>
+                        <button class="btn" style="padding: 8px 14px; font-size: 12px; margin: 0; border-color:#74b9ff; color:#74b9ff;" onclick="toggleCharModal(true)">仲間を募る ⛩️</button>
+                    </div>
+                </div>
             </div>
-            <div class="volume-row">
-                <span>SE:</span>
-                <input type="range" id="menu-slider-se" min="0" max="100" value="70" oninput="handleVolumeSlider('se', this.value)">
-                <span id="menu-val-se" class="volume-val">70%</span>
-            </div>
-        </div>
 
-        <button class="btn" style="font-size:18px; margin-top:15px; width:100%; background:#ff4757; color:#fff;" onclick="startGame()">異変解決へ向かう</button>
+            <!-- ➡️ 右カラム -->
+            <div class="menu-col">
+                <!-- ③ 能力解放 -->
+                <div class="menu-section">
+                    <h4 class="section-title" style="color: #2ed573;">🔮 能力解放（永続強化）</h4>
+                    <div style="font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>⚔️ 攻撃力 Lv.<span id="up-atk-lv">0</span></span>
+                            <button class="btn" style="padding:5px 10px; font-size:11px; margin:0;" id="btn-up-atk" onclick="buyPermanent('atk')">消費: <span id="cost-atk">50</span>🔴</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>❤️ 体力倍率 Lv.<span id="up-hp-lv">0</span></span>
+                            <button class="btn" style="padding:5px 10px; font-size:11px; margin:0;" id="btn-up-hp" onclick="buyPermanent('hp')">消費: <span id="cost-hp">50</span>🔴</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ④ 音量設定 -->
+                <div class="menu-section">
+                    <h4 class="section-title" style="color: #a4b0be;">⚙️ 音量設定</h4>
+                    <div class="volume-container" style="border: none; padding: 0;">
+                        <div class="volume-row">
+                            <span>BGM:</span>
+                            <input type="range" id="menu-slider-bgm" min="0" max="100" value="70" oninput="handleVolumeSlider('bgm', this.value)">
+                            <span id="menu-val-bgm" class="volume-val">70%</span>
+                        </div>
+                        <div class="volume-row">
+                            <span>SE:</span>
+                            <input type="range" id="menu-slider-se" min="0" max="100" value="70" oninput="handleVolumeSlider('se', this.value)">
+                            <span id="menu-val-se" class="volume-val">70%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- 📦 レイアウトここまで -->
+
+        <button class="btn" style="font-size:18px; margin-top:20px; width:100%; background:#ff4757; color:#fff; box-shadow: 0 4px 15px rgba(255,71,87,0.3);" onclick="startGame()">異変解決へ向かう</button>
     </div>
 
     <!-- キャラクター一覧モーダル画面 -->
     <div id="charModal" class="modal-layer">
-        <div class="menu-window" style="border-color: #74b9ff;">
+        <div class="menu-window" style="border-color: #74b9ff; max-width: 420px;">
             <h3 style="color:#74b9ff; margin-top:0;">⛩️ 参戦キャラクター一覧</h3>
             <div class="grid">
                 <div class="card selected" id="char-reimu" onclick="selectChar('reimu')">
@@ -294,10 +362,10 @@ charImages.reimu.src = 'reimu.png'; charImages.marisa.src = 'marisa.png'; charIm
 let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
 
-// セーブデータ初期値 (volBgm, volSE は 0.0 ~ 1.0)
+// セーブデータ初期値
 let saveData = { gold: 0, upAtk: 0, upHp: 0, unlockedChars: ['reimu'], volBgm: 0.7, volSE: 0.7 };
 
-// --- 🎧 MP3対応オーディオエンジン & BGMミキサー ---
+// --- 🎧 オーディオエンジン ---
 let audioCtx = null;
 let bgmAudioElement = null;
 let bgmSourceNode = null;
@@ -307,8 +375,6 @@ let currentBgmPath = "";
 function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // BGM用のHTMLAudioElementを生成してノードに接続
         bgmAudioElement = new Audio();
         bgmAudioElement.loop = true;
         bgmAudioElement.crossOrigin = "anonymous";
@@ -325,7 +391,6 @@ function initAudio() {
     }
 }
 
-// BGMのスムーズな切り替え処理
 function playBgm(filename) {
     initAudio();
     if (currentBgmPath === filename) return; 
@@ -343,7 +408,6 @@ function updateBgmVolume() {
     }
 }
 
-// スライダー操作時の共通処理
 function handleVolumeSlider(type, val) {
     let volumeValue = parseFloat(val) / 100;
     if (type === 'bgm') {
@@ -361,7 +425,6 @@ function handleVolumeSlider(type, val) {
     saveGame();
 }
 
-// レトロな効果音用シンセ
 function createSynthSE(type) {
     initAudio();
     if (!audioCtx || saveData.volSE <= 0) return;
@@ -376,7 +439,6 @@ function createSynthSE(type) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.08);
-
     } else if (type === 'shoot') {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -387,36 +449,21 @@ function createSynthSE(type) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.05);
-
     } else if (type === 'hit') {
-        // 🔮 ヴァンサバ風レトロビット＆東方テイストを融合させた小気味良いヒット音
         const osc1 = audioCtx.createOscillator();
         const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        
-        // 矩形波(square)でファミコン・ビット感を演出し、高周波から高速スライドさせて金属的な「キッ」という爽快感を出す
         osc1.type = 'square';
         osc1.frequency.setValueAtTime(2400, now);
         osc1.frequency.exponentialRampToValueAtTime(800, now + 0.03);
-        
-        // 倍音成分を少しずらして重ね、東方らしいきらびやかさと芯のある弾頭ヒット感を強調
         osc2.type = 'triangle';
         osc2.frequency.setValueAtTime(1200, now);
         osc2.frequency.exponentialRampToValueAtTime(300, now + 0.03);
-        
-        // 大量ヒットでも耳障りにならない超短ディケイ設定
         gain.gain.setValueAtTime(saveData.volSE * 0.08, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
-        
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        osc1.start(now);
-        osc2.start(now);
-        osc1.stop(now + 0.04);
-        osc2.stop(now + 0.04);
-
+        osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination);
+        osc1.start(now); osc2.start(now);
+        osc1.stop(now + 0.04); osc2.stop(now + 0.04);
     } else if (type === 'levelup') {
         const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00];
         const noteDuration = 0.04;
@@ -436,7 +483,6 @@ function createSynthSE(type) {
             osc1.start(startTime); osc1.stop(startTime + duration);
             osc2.start(startTime); osc2.stop(startTime + duration);
         });
-
     } else if (type === 'get') {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -447,7 +493,6 @@ function createSynthSE(type) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.12);
-
     } else if (type === 'bomb') {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -460,7 +505,6 @@ function createSynthSE(type) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.45);
-
     } else if (type === 'damage') {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -471,7 +515,6 @@ function createSynthSE(type) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.09);
-
     } else if (type === 'gameover') {
         const dNotes = [392.00, 349.23, 311.13, 246.94];
         dNotes.forEach((freq, idx) => {
@@ -496,7 +539,6 @@ function loadGame() {
     if (saveData.volBgm === undefined) saveData.volBgm = 0.7;
     if (saveData.volSE === undefined) saveData.volSE = 0.7;
     
-    // スライダーの初期値を設定
     document.getElementById('menu-slider-bgm').value = Math.round(saveData.volBgm * 100);
     document.getElementById('menu-slider-se').value = Math.round(saveData.volSE * 100);
     document.getElementById('menu-val-bgm').innerText = Math.round(saveData.volBgm * 100) + "%";
@@ -584,7 +626,6 @@ let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
 
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
 
-// 最初のクリックでメニュー用BGMを流す仕掛け
 window.addEventListener('click', () => {
     if (!gameActive && (!bgmAudioElement || bgmAudioElement.paused)) {
         playBgm('bgm_menu.mp3');
@@ -603,13 +644,11 @@ touchOverlay.addEventListener('touchend', () => { isTouching = false; touchMoveV
 
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
-    // ⚙️ Escキーによる中断・再開
     if (e.key === 'Escape' || e.key === 'Esc') {
         e.preventDefault();
         if (gameActive) {
             triggerPause();
         } else if (uiLayer.style.display === 'flex' && uiTitle.innerText === "戦術一時停止") {
-            // 中断画面が開いている時にEscを押したらゲームに戻る
             createSynthSE('click'); uiLayer.style.display = 'none'; gameActive = true; updateLoop();
         }
     }
@@ -637,16 +676,13 @@ function activateSpellCard() {
     }
 }
 
-// ⚙️ 復活・拡張：中断画面に音量スライダーを設置
 function triggerPause() {
-    if (!gameActive && uiLayer.style.display === 'flex' && uiTitle.innerText !== "戦術一時停止") return; // レベルアップ中などは弾く
+    if (!gameActive && uiLayer.style.display === 'flex' && uiTitle.innerText !== "戦術一時停止") return;
     createSynthSE('click');
     gameActive = false; 
-    
     uiTitle.innerText = "戦術一時停止"; 
     uiOptions.innerHTML = "";
 
-    // ボリュームスライダー要素をHTML文字列として流し込む
     const volBox = document.createElement('div');
     volBox.className = 'volume-container';
     volBox.style.width = '90%';
@@ -679,7 +715,7 @@ function triggerPause() {
 function exitGameToMenu() {
     gameActive = false; uiLayer.style.display = 'none'; gameContainer.style.display = 'none';
     document.getElementById('mainMenu').style.display = 'block'; 
-    playBgm('bgm_menu.mp3'); // メニュー用BGMへ切り替え
+    playBgm('bgm_menu.mp3'); 
     updateMenuUI();
 }
 
@@ -724,7 +760,6 @@ function getUpgradeOptions() {
             }
         });
     }
-
     return list.sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
@@ -733,8 +768,6 @@ function startGame() {
     document.getElementById('mainMenu').style.display = 'none';
     gameContainer.style.display = 'block';
     document.getElementById('gacha-result').innerText = "";
-
-    // 🎵 戦闘用BGMに切り替え
     playBgm('bgm_game.mp3');
 
     if (window.innerHeight > window.innerWidth) { canvas.width = 580; canvas.height = 960; } 
@@ -766,19 +799,13 @@ function updateLoop() {
     if (spellCooldown > 0) { spellCooldown--; bombBtn.disabled = true; bombCdText.innerText = `${Math.ceil(spellCooldown/60)}s`; } 
     else { bombBtn.disabled = false; bombCdText.innerText = "READY"; }
     
-    if (spellActiveTimer > 0) {
-        spellActiveTimer--; if (spellActiveTimer <= 0) sakuyaTimeStopActive = false;
-    }
+    if (spellActiveTimer > 0) { spellActiveTimer--; if (spellActiveTimer <= 0) sakuyaTimeStopActive = false; }
 
     if (player.type === 'reimu' && personalSkillLevel > 0 && reimuBarrierHp <= 0) {
         reimuBarrierCooldown--;
-        if (reimuBarrierCooldown <= 0) {
-            reimuBarrierHp = reimuBarrierMaxHp;
-            createParticles(player.x, player.y, '#ff4757', 15);
-        }
+        if (reimuBarrierCooldown <= 0) { reimuBarrierHp = reimuBarrierMaxHp; createParticles(player.x, player.y, '#ff4757', 15); }
     }
 
-    // 移動処理
     let dx = 0, dy = 0;
     if (keys['arrowup'] || keys['w']) dy -= 1;
     if (keys['arrowdown'] || keys['s']) dy += 1;
@@ -797,7 +824,6 @@ function updateLoop() {
     player.x += dx * currentSpeed; player.y += dy * currentSpeed;
     camera.x = player.x - canvas.width / 2; camera.y = player.y - canvas.height / 2;
 
-    // 優曇華固有
     if (player.type === 'reisen' && personalSkillLevel > 0 && !sakuyaTimeStopActive && player.animTimer % 100 === 0) {
         let waveRadius = personalSkillLevel === 1 ? 160 : 250;
         let waveDmg = personalSkillLevel === 1 ? player.damage : player.damage * 2;
@@ -807,19 +833,16 @@ function updateLoop() {
                 e.hp -= waveDmg;
                 let pushAng = Math.atan2(e.y - player.y, e.x - player.x);
                 e.x += Math.cos(pushAng) * 45; e.y += Math.sin(pushAng) * 45; 
-                createParticles(e.x, e.y, '#a55eea', 3);
-                createSynthSE('hit');
+                createParticles(e.x, e.y, '#a55eea', 3); createSynthSE('hit');
             }
         });
     }
 
-    // 咲夜固有
     if (player.type === 'sakuya' && personalSkillLevel > 0) {
         sakuyaDollKnives.forEach(k => {
             if (!sakuyaTimeStopActive) { k.x += k.vx; k.y += k.vy; }
             if (Math.abs(k.x - player.x) > 460) k.vx *= -1;
             if (Math.abs(k.y - player.y) > 280) k.vy *= -1;
-
             enemies.forEach(e => {
                 if (Math.hypot(e.x - k.x, e.y - k.y) < e.size * 0.6) {
                     e.hp -= player.damage * 0.4; createParticles(e.x, e.y, '#74b9ff', 1);
@@ -829,7 +852,6 @@ function updateLoop() {
         });
     }
 
-    // 妖夢固有
     if (player.type === 'youmu' && personalSkillLevel > 0) {
         youmuHalfGhost.angle += 0.03;
         let targetGx = player.x + Math.cos(youmuHalfGhost.angle) * 60;
@@ -850,16 +872,10 @@ function updateLoop() {
         }
     }
 
-    // サブ武器
     if (subWeapons.garlic > 0 && !sakuyaTimeStopActive && player.animTimer % 10 === 0) {
         let radius = 50 + subWeapons.garlic * 15; let dmg = 2 + subWeapons.garlic * 2;
         let didHit = false;
-        enemies.forEach(e => { 
-            if (Math.hypot(e.x - player.x, e.y - player.y) < radius) { 
-                e.hp -= dmg; createParticles(e.x, e.y, '#2ed573', 1); 
-                didHit = true;
-            } 
-        });
+        enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < radius) { e.hp -= dmg; createParticles(e.x, e.y, '#2ed573', 1); didHit = true; } });
         if (didHit) createSynthSE('hit');
     }
 
@@ -895,7 +911,6 @@ function updateLoop() {
         let target = enemies[0]; let minDist = Math.hypot(enemies[0].x - player.x, enemies[0].y - player.y);
         for (let i = 1; i < enemies.length; i++) { let d = Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y); if (d < minDist) { minDist = d; target = enemies[i]; } }
         let baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
-
         createSynthSE('shoot');
 
         if (player.type === 'reimu') {
@@ -927,7 +942,6 @@ function updateLoop() {
         }
     } else { player.shootCooldown--; }
 
-    // 弾の更新
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
         if (b.type === 'amulet' && enemies.length > 0) {
@@ -941,7 +955,6 @@ function updateLoop() {
         if (b.type !== 'slash' && b.type !== 'book' && Math.hypot(b.x - player.x, b.y - player.y) > 850) { bullets.splice(i, 1); }
     }
 
-    // 敵の生成
     if (!sakuyaTimeStopActive) {
         spawnTimer++; const spawnRate = Math.max(4, 26 - Math.floor(surviveTime / 10)); 
         if (spawnTimer % spawnRate === 0) {
@@ -951,7 +964,6 @@ function updateLoop() {
             if (surviveTime > 180) difficultyCurve += (surviveTime - 180) * 0.05; 
 
             let size = 24, hp = (9 + (surviveTime * 1.5)) * difficultyCurve, speed = 2.4 + Math.random() * 0.6, isBoss = false, color = '#7f8c8d';
-            
             if (Math.random() < 0.05 + (surviveTime / 220) || spawnTimer % 1800 === 0) { 
                 isBoss = true; size = 55; hp = (250 + (surviveTime * 15)) * difficultyCurve; speed = 1.3; color = '#8e44ad'; 
             } else if (surviveTime > 120 && Math.random() < 0.4) { 
@@ -963,7 +975,6 @@ function updateLoop() {
         }
     }
 
-    // 魔理沙レーザー
     if (player.type === 'marisa' && spellActiveTimer > 0) {
         let laserHeight = 110, laserWidth = 900;
         let laserLeft = marisaLaserDirection > 0 ? player.x : player.x - laserWidth; let laserTop = player.y - laserHeight / 2;
@@ -975,19 +986,15 @@ function updateLoop() {
         });
     }
 
-    // 敵当たり判定
     for (let eIndex = enemies.length - 1; eIndex >= 0; eIndex--) {
         const enemy = enemies[eIndex];
-        
-        // 霊夢結界
         if (player.type === 'reimu' && personalSkillLevel > 0 && reimuBarrierHp > 0) {
             let barrierR = personalSkillLevel === 1 ? 80 : 130;
             let barrierDist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
             if (barrierDist < barrierR) {
                 let pushA = Math.atan2(enemy.y - player.y, enemy.x - player.x);
                 enemy.x = player.x + Math.cos(pushA) * barrierR; enemy.y = player.y + Math.sin(pushA) * barrierR;
-                let cost = enemy.isBoss ? 5.0 : 0.5;
-                reimuBarrierHp -= cost;
+                let cost = enemy.isBoss ? 5.0 : 0.5; reimuBarrierHp -= cost;
                 if (reimuBarrierHp <= 0) {
                     reimuBarrierHp = 0; reimuBarrierCooldown = personalSkillLevel === 1 ? 720 : 420;
                     createParticles(player.x, player.y, '#fff', 20); createSynthSE('damage');
@@ -1009,12 +1016,10 @@ function updateLoop() {
             }
         }
 
-        // 弾が敵に当たった時の判定
         for (let bIndex = bullets.length - 1; bIndex >= 0; bIndex--) {
             const b = bullets[bIndex];
             if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < (enemy.size * 0.5 + b.size * 0.5)) {
-                enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); 
-                createSynthSE('hit');
+                enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); createSynthSE('hit');
                 if (b.type !== 'slash' && b.type !== 'book' && !b.penetrate) bullets.splice(bIndex, 1);
             }
         }
@@ -1025,7 +1030,6 @@ function updateLoop() {
         }
     }
 
-    // ジェム
     for (let gIndex = gems.length - 1; gIndex >= 0; gIndex--) {
         const gem = gems[gIndex]; const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
         if (dist < player.magnetRange) { gem.x += ((player.x - gem.x) / dist) * 10; gem.y += ((player.y - gem.y) / dist) * 10; }
@@ -1123,7 +1127,6 @@ function draw() {
     
     particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fillRect(p.x - camera.x, p.y - camera.y, 4, 4); ctx.globalAlpha = 1.0; });
 
-    // UI上部
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(20, 20, canvas.width - 40, 10, 5); ctx.fill();
     ctx.fillStyle = '#2e86de'; ctx.beginPath(); ctx.roundRect(20, 20, (canvas.width - 40) * Math.min(1, exp / nextExp), 10, 5); ctx.fill();
     
@@ -1135,7 +1138,6 @@ function draw() {
     if (subWeapons.book > 0) swText += `📖Lv.${subWeapons.book} `;
     if (subWeapons.thunder > 0) swText += `⚡Lv.${subWeapons.thunder} `;
     if (personalSkillLevel > 0) swText += `⭐固有Lv.${personalSkillLevel} `;
-    
     if (player.type === 'reimu' && personalSkillLevel > 0) {
         if (reimuBarrierHp > 0) swText += `🛡️結界:${Math.ceil(reimuBarrierHp)} `;
         else swText += `⏳結界再生中:${Math.ceil(reimuBarrierCooldown/60)}s `;
@@ -1150,15 +1152,11 @@ function draw() {
 function levelUp() {
     gameActive = false; level++; exp -= nextExp; nextExp = Math.floor(nextExp * 1.5) + 4;
     createSynthSE('levelup'); 
-    
     uiTitle.innerText = `能力開花 (Lv.${level})`; uiOptions.innerHTML = ""; 
     const options = getUpgradeOptions();
     options.forEach(upgrade => {
         const btn = document.createElement('button'); btn.className = 'btn'; btn.innerText = upgrade.name;
-        btn.onclick = () => { 
-            createSynthSE('click');
-            upgrade.effect(); uiLayer.style.display = 'none'; gameActive = true; updateLoop(); 
-        };
+        btn.onclick = () => { createSynthSE('click'); upgrade.effect(); uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
         uiOptions.appendChild(btn);
     });
     uiLayer.style.display = 'flex';
@@ -1167,15 +1165,13 @@ function levelUp() {
 function gameOver() {
     gameActive = false; uiTitle.innerText = "満身創痍"; saveData.gold += goldEarned; saveGame();
     createSynthSE('gameover'); 
-    
     const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0');
     uiOptions.innerHTML = `<p style="margin:5px 0; font-size:16px;">リザルト</p><p style="margin:5px 0; font-size:14px;">防衛時間: ${min}分${sec}秒</p><p style="margin:5px 0; font-size:14px;">回収POINT: <span class="p-text">+${goldEarned}</span> 🔴</p>`;
     const menuBtn = document.createElement('button'); menuBtn.className = 'btn'; menuBtn.innerText = '里へ戻る';
     menuBtn.onclick = () => { 
         createSynthSE('click');
         uiLayer.style.display = 'none'; gameContainer.style.display = 'none'; document.getElementById('mainMenu').style.display = 'block'; 
-        playBgm('bgm_menu.mp3'); 
-        updateMenuUI(); 
+        playBgm('bgm_menu.mp3'); updateMenuUI(); 
     };
     uiOptions.appendChild(menuBtn); uiLayer.style.display = 'flex';
 }
