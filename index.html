@@ -298,19 +298,16 @@
                     <h4 style="color:#a55eea; margin:2px 0;">鈴仙・優曇華院</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">前後貫通レーザー / 💥赤眼催眠(周囲超爆発)</p>
                 </div>
-                <!-- 👁️ 五条悟の追加 -->
                 <div class="card locked" id="char-gojou" onclick="selectChar('gojou')">
                     <span class="lock-badge" id="badge-gojou">🔒 未解放</span>
                     <h4 style="color:#ffffff; text-shadow:0 0 5px #74b9ff; margin:2px 0;">五条 悟</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">術式順転「蒼」 / 💥領域展開「無量空処」(10秒完全時間停止)</p>
                 </div>
-                <!-- 🔮 ロキシーの追加 -->
                 <div class="card locked" id="char-roxy" onclick="selectChar('roxy')">
                     <span class="lock-badge" id="badge-roxy">🔒 未解放</span>
                     <h4 style="color:#54a0ff; margin:2px 0;">ロキシー・ミグルディア</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">絶対零度(範囲氷結) / 💥キュムロニンバス(画面全体雷雨爆撃)</p>
                 </div>
-                <!-- ⚾ 加藤純一の追加 -->
                 <div class="card locked" id="char-jun" onclick="selectChar('jun')">
                     <span class="lock-badge" id="badge-jun">🔒 未解放</span>
                     <h4 style="color:#ff9f43; margin:2px 0;">加藤 純一</h4>
@@ -375,9 +372,9 @@ charImages.marisa.src = 'marisa.png';
 charImages.youmu.src = 'youmu.png'; 
 charImages.sakuya.src = 'sakuya.png'; 
 charImages.reisen.src = 'reisen.png';
-charImages.gojou.src = 'gojou.png'; // 五条悟画像指定
-charImages.roxy.src = 'roxy.png';   // ロキシー画像指定
-charImages.jun.src = 'jun.png';     // 加藤純一画像指定
+charImages.gojou.src = 'gojou.png'; 
+charImages.roxy.src = 'roxy.png';   
+charImages.jun.src = 'jun.png';     
 
 let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false, jun: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
@@ -391,6 +388,9 @@ let bgmAudioElement = null;
 let bgmSourceNode = null;
 let bgmGainNode = null;
 let currentBgmPath = "";
+
+// 加藤純一スペカ音声用のAudioオブジェクトを事前にロード
+const junVoiceAudio = new Audio('jun.mp3');
 
 function initAudio() {
     if (!audioCtx) {
@@ -561,16 +561,10 @@ function createSynthSE(type) {
 
 // 加藤純一スペカ音声再生関数
 function playJunVoice() {
-    initAudio();
-    if (!audioCtx) return;
-    
-    // 音声合成（Web Speech API）でセリフをリアルタイムに叫ばせる
-    const utterance = new SpeechSynthesisUtterance("おいテメェ！俺の右ストレートで…ぶっ殺してやるからなテメェ！");
-    utterance.lang = 'ja-JP';
-    utterance.rate = 1.3;  // 早口でパワフルに
-    utterance.pitch = 0.8; // 力強い低音
-    utterance.volume = saveData.volSE;
-    window.speechSynthesis.speak(utterance);
+    if (saveData.volSE <= 0) return;
+    junVoiceAudio.volume = saveData.volSE;
+    junVoiceAudio.currentTime = 0;
+    junVoiceAudio.play().catch(e => console.log("Voice Play Error:", e));
 }
 
 function loadGame() {
@@ -665,7 +659,6 @@ let reimuBarrierHp = 0, reimuBarrierMaxHp = 0, reimuBarrierCooldown = 0;
 let sakuyaDollKnives = [];
 let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
 
-// 五条悟用のシステム変数
 let gojouMugenHp = 0, gojouMugenMaxHp = 0, gojouMugenCooldown = 0;
 
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
@@ -718,13 +711,11 @@ function activateSpellCard() {
         spellActiveTimer = 45; createParticles(player.x, player.y, '#a55eea', 50);
         enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < 350) { e.hp -= player.damage * 6; createParticles(e.x, e.y, '#fff', 6); } });
     } else if (player.type === 'gojou') {
-        // 五条悟：領域展開「無量空処」（10秒間=600フレーム、画面全体の敵を完全停止）
         spellActiveTimer = 600;
-        sakuyaTimeStopActive = true; // 時間停止フラグを兼用
+        sakuyaTimeStopActive = true; 
         createParticles(player.x, player.y, '#74b9ff', 60);
         enemies.forEach(e => { e.hp -= player.damage * 3; });
     } else if (player.type === 'roxy') {
-        // ロキシー：キュムロニンバス（広範囲に爆発雷撃）
         spellActiveTimer = 90;
         for (let i = 0; i < 25; i++) {
             setTimeout(() => {
@@ -742,9 +733,9 @@ function activateSpellCard() {
             }, i * 60);
         }
     } else if (player.type === 'jun') {
-        // 加藤純一：スペカ「ビヨンド」を発動
-        playJunVoice(); // 指定音声を再生
-        spellActiveTimer = 180; // 3秒間持続
+        // 加藤純一スペカ「ビヨンド」発動
+        playJunVoice(); 
+        spellActiveTimer = 180; 
         createParticles(player.x, player.y, '#ff9f43', 40);
     }
 }
@@ -869,9 +860,9 @@ function startGame() {
     else if (selectedCharType === 'youmu') { player.maxHp = 120; player.damage = 18; player.speed = 4.6; player.attackSpeed = 1.5; }
     else if (selectedCharType === 'sakuya') { player.maxHp = 95; player.damage = 15; player.speed = 4.8; player.attackSpeed = 2.2; } 
     else if (selectedCharType === 'reisen') { player.maxHp = 110; player.damage = 20; player.speed = 4.2; player.attackSpeed = 1.3; }
-    else if (selectedCharType === 'gojou') { player.maxHp = 150; player.damage = 25; player.speed = 4.5; player.attackSpeed = 1.2; } // 五条悟ステータス
-    else if (selectedCharType === 'roxy') { player.maxHp = 90; player.damage = 28; player.speed = 4.0; player.attackSpeed = 1.1; }  // ロキシーステータス
-    else if (selectedCharType === 'jun') { player.maxHp = 140; player.damage = 35; player.speed = 4.4; player.attackSpeed = 1.0; }   // 加藤純一ステータス（高火力パワフル設定）
+    else if (selectedCharType === 'gojou') { player.maxHp = 150; player.damage = 25; player.speed = 4.5; player.attackSpeed = 1.2; } 
+    else if (selectedCharType === 'roxy') { player.maxHp = 90; player.damage = 28; player.speed = 4.0; player.attackSpeed = 1.1; }  
+    else if (selectedCharType === 'jun') { player.maxHp = 140; player.damage = 35; player.speed = 4.4; player.attackSpeed = 1.0; }   
 
     player.maxHp += (saveData.upHp * 25); player.damage += (saveData.upAtk * 4);
     player.hp = player.maxHp; score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
@@ -899,7 +890,6 @@ function updateLoop() {
         if (reimuBarrierCooldown <= 0) { reimuBarrierHp = reimuBarrierMaxHp; createParticles(player.x, player.y, '#ff4757', 15); }
     }
 
-    // 五条悟のバリア管理
     if (player.type === 'gojou' && personalSkillLevel > 0 && gojouMugenHp <= 0) {
         gojouMugenCooldown--;
         if (gojouMugenCooldown <= 0) { gojouMugenHp = gojouMugenMaxHp; createParticles(player.x, player.y, '#74b9ff', 20); }
@@ -921,7 +911,10 @@ function updateLoop() {
     if (player.type === 'youmu' && spellActiveTimer > 0) currentSpeed *= 1.8;
     
     player.x += dx * currentSpeed; player.y += dy * currentSpeed;
-    camera.x = player.x - canvas.width / 2; camera.y = player.y - camera.height / 2;
+    
+    // 🛠️ 【最重要バグ修正箇所】 camera.height を正しく canvas.height に修正し、画面が左上へ飛ぶ挙動を完全に解決
+    camera.x = player.x - canvas.width / 2; 
+    camera.y = player.y - canvas.height / 2;
 
     if (player.type === 'reisen' && personalSkillLevel > 0 && !sakuyaTimeStopActive && player.animTimer % 100 === 0) {
         let waveRadius = personalSkillLevel === 1 ? 160 : 250;
@@ -1005,9 +998,9 @@ function updateLoop() {
         }
     }
 
-    // 加藤純一のスペカ「ビヨンド」作動中のバット乱舞処理
+    // 加藤純一スペカ「ビヨンド」のバット乱舞処理
     if (player.type === 'jun' && spellActiveTimer > 0) {
-        let bCount = 6; // 6つの超巨大スイング波を周囲に展開
+        let bCount = 6; 
         for (let i = 0; i < bCount; i++) {
             let angle = (player.animTimer * 0.15) + (i * (Math.PI * 2 / bCount));
             let radius = 70 + Math.sin(player.animTimer * 0.1) * 30;
@@ -1015,12 +1008,11 @@ function updateLoop() {
                 x: player.x + Math.cos(angle) * radius,
                 y: player.y + Math.sin(angle) * radius,
                 vx: 0, vy: 0,
-                damage: player.damage * 2.0, // 超強烈ダメージ
+                damage: player.damage * 2.0, 
                 type: 'beyond_swing',
-                size: 90 // 超巨大サイズ
+                size: 90 
             });
         }
-        // 周囲の敵を強烈に押し返す斥力
         enemies.forEach(e => {
             let d = Math.hypot(e.x - player.x, e.y - player.y);
             if (d < 280) {
@@ -1064,19 +1056,17 @@ function updateLoop() {
                 bullets.push({ x: player.x - offset, y: player.y, vx: -player.lastDirX * 14, vy: 0, damage: player.damage * 0.7, type: '座薬', size: 20 });
             }
         } else if (player.type === 'gojou') {
-            // 五条悟：術式順転「蒼」(敵を引き寄せる重力弾弾幕)
             for (let i = 0; i < player.multishot; i++) {
                 let angle = baseAngle + (i - (player.multishot-1)/2) * 0.2;
                 bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 8, vy: Math.sin(angle) * 8, damage: player.damage, type: 'ao', size: 24 });
             }
         } else if (player.type === 'roxy') {
-            // ロキシー：絶対零度(着弾で大爆発する氷結魔法)
             for (let i = 0; i < player.multishot; i++) {
                 let angle = baseAngle + (i - (player.multishot-1)/2) * 0.25;
                 bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, damage: player.damage * 1.4, type: 'ice', size: 22 });
             }
         } else if (player.type === 'jun') {
-            // 加藤純一：通常攻撃（前方に豪快なスイング衝撃波を放つ）
+            // 加藤純一通常攻撃：スイング衝撃波
             let swingRange = personalSkillLevel > 0 ? 70 : 45;
             let swingDmg = personalSkillLevel === 2 ? player.damage * 1.5 : player.damage;
             let targetAngle = Math.atan2(target.y - player.y, target.x - player.x);
@@ -1105,7 +1095,6 @@ function updateLoop() {
             curAngle += diff * 0.22; b.vx = Math.cos(curAngle) * 11; b.vy = Math.sin(curAngle) * 11;
         }
         
-        // 五条悟の「蒼」の吸引効果
         if (b.type === 'ao') {
             enemies.forEach(e => {
                 if (Math.hypot(e.x - b.x, e.y - b.y) < 160) {
@@ -1167,7 +1156,6 @@ function updateLoop() {
             }
         }
 
-        // 五条悟の無下限呪術シールド処理
         if (player.type === 'gojou' && personalSkillLevel > 0 && gojouMugenHp > 0) {
             let barrierR = personalSkillLevel === 1 ? 70 : 110;
             let barrierDist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
@@ -1200,7 +1188,6 @@ function updateLoop() {
             const b = bullets[bIndex];
             if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < (enemy.size * 0.5 + b.size * 0.5)) {
                 
-                // ロキシーの氷結弾がヒットしたときの範囲爆発
                 if (b.type === 'ice') {
                     createParticles(b.x, b.y, '#54a0ff', 10);
                     enemies.forEach(e => {
@@ -1210,7 +1197,7 @@ function updateLoop() {
                     });
                 }
 
-                // 加藤純一のバットスイングによる強力ノックバック効果
+                // 加藤純一のバットスイングによる強力ノックバック
                 if (b.type === 'jun_swing' || b.type === 'beyond_swing') {
                     let kAng = Math.atan2(enemy.y - player.y, enemy.x - player.x);
                     let kDist = b.type === 'beyond_swing' ? 35 : (personalSkillLevel > 0 ? 25 : 12);
@@ -1261,7 +1248,6 @@ function draw() {
         ctx.fillStyle = `rgba(255, 71, 87, ${alpha * 0.1})`; ctx.fill(); ctx.restore();
     }
 
-    // 五条悟無下限シールドエフェクト描画
     if (player.type === 'gojou' && personalSkillLevel > 0 && gojouMugenHp > 0) {
         ctx.save(); let bRadius = personalSkillLevel === 1 ? 70 : 110;
         let alpha = (gojouMugenHp / gojouMugenMaxHp) * 0.5 + 0.1;
@@ -1294,22 +1280,18 @@ function draw() {
         else if (b.type === 'slash') { let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2); grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#2ed573'); grad.addColorStop(1, 'rgba(46,213,115,0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); }
         else if (b.type === 'ghost_wave') { ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.strokeStyle = '#2ed573'; ctx.beginPath(); ctx.arc(0,0, b.size/2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
         else if (b.type === 'ao') { 
-            // 五条悟の「蒼」のグラデーション弾
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.4, '#341f97'); grad.addColorStop(1, 'rgba(116,185,255,0)');
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
         } else if (b.type === 'ice') {
-            // ロキシーの「絶対零度」の結晶弾
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#54a0ff'); grad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
         } else if (b.type === 'jun_swing') {
-            // 加藤純一の通常スイング衝撃波エフェクト
             let grad = ctx.createRadialGradient(0, 0, 2, 0, 0, b.size);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.6, '#ff9f43'); grad.addColorStop(1, 'rgba(255,159,67,0)');
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size, 0, Math.PI * 2); ctx.fill();
         } else if (b.type === 'beyond_swing') {
-            // スペカ「ビヨンド」の超巨大乱舞エフェクト
             let grad = ctx.createRadialGradient(0, 0, 10, 0, 0, b.size);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.3, '#ff4757'); grad.addColorStop(0.7, '#ff9f43'); grad.addColorStop(1, 'rgba(235,94,40,0)');
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size, 0, Math.PI * 2); ctx.fill();
@@ -1325,7 +1307,7 @@ function draw() {
     }
 
     if (player.type === 'marisa' && spellActiveTimer > 0) {
-        ctx.save(); let lHeight = 110 + Math.sin(player.animTimer * 0.4) * 15, lWidth = 960;
+        let lHeight = 110 + Math.sin(player.animTimer * 0.4) * 15, lWidth = 960;
         let lX = marisaLaserDirection > 0 ? player.x - camera.x : player.x - camera.x - lWidth; let lY = player.y - camera.y - lHeight / 2;
         let grad = ctx.createLinearGradient(0, lY, 0, lY + lHeight); grad.addColorStop(0, 'rgba(255, 159, 67, 0)'); grad.addColorStop(0.2, '#ff9f43'); grad.addColorStop(0.5, '#fff'); grad.addColorStop(0.8, '#f1c40f'); grad.addColorStop(1, 'rgba(255, 159, 67, 0)');
         ctx.fillStyle = grad; ctx.fillRect(lX, lY, lWidth, lHeight); ctx.fillStyle = '#ffffff'; ctx.fillRect(lX, lY + lHeight*0.35, lWidth, lHeight*0.3); ctx.restore();
@@ -1373,7 +1355,6 @@ function draw() {
         if (reimuBarrierHp > 0) swText += `🛡️結界:${Math.ceil(reimuBarrierHp)} `;
         else swText += `⏳結界再生中:${Math.ceil(reimuBarrierCooldown/60)}s `;
     }
-    // 五条悟のバリア状況UI
     if (player.type === 'gojou' && personalSkillLevel > 0) {
         if (gojouMugenHp > 0) swText += `🛡️無下限:${Math.ceil(gojouMugenHp)} `;
         else swText += `⏳無下限再生中:${Math.ceil(gojouMugenCooldown/60)}s `;
