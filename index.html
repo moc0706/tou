@@ -55,7 +55,7 @@
             padding: 20px;
             border-radius: 24px;
             text-align: center;
-            max-width: 800px; /* 650pxから800pxに拡張 */
+            max-width: 800px;
             width: 95%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.8);
             z-index: 20;
@@ -207,16 +207,13 @@
 </head>
 <body>
 
-    <!-- メインメニュー -->
     <div id="mainMenu" class="menu-window">
         <h1 style="color:#ff4757; margin: 0; font-size: 24px; letter-spacing: 1px;">☯️ 東方生存郷 ☯️</h1>
         <p style="font-size: 13px; color: #a4b0be; margin: 2px 0 10px 0; font-style: italic;">~ Border of Survivors</p>
         <p style="margin: 5px 0; font-size: 16px;">所持POINT: <span id="menuGold" class="p-text">0</span> 🔴</p>
         
-        <!-- 📦 ここから2×2グリッドレイアウト -->
         <div class="menu-layout">
             
-            <!-- ① ガチャ -->
             <div class="menu-section" style="border-color: #ffcc00; background: rgba(255,204,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h4 class="section-title">⛩️ 博麗神社 賽銭箱ガチャ</h4>
@@ -228,7 +225,6 @@
                 </div>
             </div>
 
-            <!-- ② キャラクター選択 -->
             <div class="menu-section" style="display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h4 class="section-title" style="color: #74b9ff;">👥 出撃キャラクター</h4>
@@ -240,7 +236,6 @@
                 </div>
             </div>
 
-            <!-- ③ 能力解放 -->
             <div class="menu-section">
                 <h4 class="section-title" style="color: #2ed573;">🔮 能力解放（永続強化）</h4>
                 <div style="font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
@@ -255,7 +250,6 @@
                 </div>
             </div>
 
-            <!-- ④ 音量設定 -->
             <div class="menu-section" style="display: flex; flex-direction: column; justify-content: center;">
                 <h4 class="section-title" style="color: #a4b0be; margin-bottom: 12px;">⚙️ 音量設定</h4>
                 <div class="volume-container" style="border: none; padding: 0;">
@@ -273,12 +267,9 @@
             </div>
 
         </div>
-        <!-- 📦 レイアウトここまで -->
-
         <button class="btn" style="font-size:18px; margin-top:20px; width:100%; background:#ff4757; color:#fff; box-shadow: 0 4px 15px rgba(255,71,87,0.3);" onclick="startGame()">異変解決へ向かう</button>
     </div>
 
-    <!-- キャラクター一覧モーダル画面 -->
     <div id="charModal" class="modal-layer">
         <div class="menu-window" style="border-color: #74b9ff; max-width: 420px;">
             <h3 style="color:#74b9ff; margin-top:0;">⛩️ 参戦キャラクター一覧</h3>
@@ -312,7 +303,6 @@
         </div>
     </div>
 
-    <!-- ゲームプレイ画面 -->
     <div id="gameContainer" class="canvas-container">
         <canvas id="gameCanvas" width="960" height="580"></canvas>
         <div id="touch-overlay"></div>
@@ -320,7 +310,6 @@
         <button id="bomb-btn" onclick="activateSpellCard()"><div>スペカ</div><div id="bomb-cooldown" style="font-size:10px;">READY</div></button>
     </div>
     
-    <!-- ポーズ/レベルアップ用UI -->
     <div id="ui-layer">
         <h2 id="ui-title" style="color:#ff4757; margin-top:0; font-size: 20px;">能力開花</h2>
         <div id="ui-options" style="display:flex; flex-direction:column; width:100%;"></div>
@@ -387,6 +376,14 @@ function playBgm(filename) {
     bgmAudioElement.load();
     bgmAudioElement.play().catch(e => console.log("BGM Play Error:", e));
     updateBgmVolume();
+}
+
+// BGMを停止する処理を追加
+function stopBgm() {
+    if (bgmAudioElement) {
+        bgmAudioElement.pause();
+        currentBgmPath = "";
+    }
 }
 
 function updateBgmVolume() {
@@ -614,8 +611,9 @@ let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
 
 window.addEventListener('click', () => {
-    if (!gameActive && (!bgmAudioElement || bgmAudioElement.paused)) {
-        playBgm('bgm_menu.mp3');
+    // 画面クリック時のメニューBGM自動再生を削除（SEなどのAudioContext初期化のみ残す）
+    if (!gameActive) {
+        initAudio();
     }
 });
 
@@ -702,7 +700,7 @@ function triggerPause() {
 function exitGameToMenu() {
     gameActive = false; uiLayer.style.display = 'none'; gameContainer.style.display = 'none';
     document.getElementById('mainMenu').style.display = 'block'; 
-    playBgm('bgm_menu.mp3'); 
+    stopBgm(); // メニューに戻る際、ゲームのBGMを止める処理に変更
     updateMenuUI();
 }
 
@@ -755,7 +753,7 @@ function startGame() {
     document.getElementById('mainMenu').style.display = 'none';
     gameContainer.style.display = 'block';
     document.getElementById('gacha-result').innerText = "";
-    playBgm('bgm_game.mp3');
+    playBgm('bgm_game.mp3'); // ここでゲームの戦闘BGMが初めて再生されます
 
     if (window.innerHeight > window.innerWidth) { canvas.width = 580; canvas.height = 960; } 
     else { canvas.width = 960; canvas.height = 580; }
@@ -1158,7 +1156,8 @@ function gameOver() {
     menuBtn.onclick = () => { 
         createSynthSE('click');
         uiLayer.style.display = 'none'; gameContainer.style.display = 'none'; document.getElementById('mainMenu').style.display = 'block'; 
-        playBgm('bgm_menu.mp3'); updateMenuUI(); 
+        stopBgm(); // ゲームオーバーからメニューに戻る際もBGMを停止
+        updateMenuUI(); 
     };
     uiOptions.appendChild(menuBtn); uiLayer.style.display = 'flex';
 }
