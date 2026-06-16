@@ -48,6 +48,7 @@
             box-sizing: border-box;
         }
 
+        /* 📊 メインメニュー：横幅を広げて、要素を収まりやすく */
         .menu-window {
             background: rgba(15, 15, 25, 0.96);
             border: 3px solid #ff4757;
@@ -62,6 +63,7 @@
             overflow-y: auto;
         }
 
+        /* 📦 2×2のグリッド配置にして縦長感を解消 */
         .menu-layout {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -113,6 +115,7 @@
         .btn:disabled { border-color: #444; color: #666; background: #111; cursor: not-allowed; }
         .grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
         
+        /* キャラ選択用のカード */
         .card { 
             border: 2px solid #2f3542; 
             padding: 10px; 
@@ -183,6 +186,7 @@
         }
         .volume-val { width: 35px; text-align: right; color: #ffcc00; font-weight: bold; }
 
+        /* メインメニュー内の各セクション共通デザイン */
         .menu-section {
             background: #11121a;
             border: 2px solid #2f3542;
@@ -294,21 +298,23 @@
                     <h4 style="color:#a55eea; margin:2px 0;">鈴仙・優曇華院</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">前後貫通レーザー / 💥赤眼催眠(周囲超爆発)</p>
                 </div>
+                <!-- 👁️ 五条悟の追加 -->
                 <div class="card locked" id="char-gojou" onclick="selectChar('gojou')">
                     <span class="lock-badge" id="badge-gojou">🔒 未解放</span>
                     <h4 style="color:#ffffff; text-shadow:0 0 5px #74b9ff; margin:2px 0;">五条 悟</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">術式順転「蒼」 / 💥領域展開「無量空処」(10秒完全時間停止)</p>
                 </div>
+                <!-- 🔮 ロキシーの追加 -->
                 <div class="card locked" id="char-roxy" onclick="selectChar('roxy')">
                     <span class="lock-badge" id="badge-roxy">🔒 未解放</span>
                     <h4 style="color:#54a0ff; margin:2px 0;">ロキシー・ミグルディア</h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">絶対零度(範囲氷結) / 💥キュムロニンバス(画面全体雷雨爆撃)</p>
                 </div>
-                <!-- 👑 加藤純一の追加 -->
-                <div class="card locked" id="char-katou" onclick="selectChar('katou')">
-                    <span class="lock-badge" id="badge-katou">🔒 未解放</span>
-                    <h4 style="color:#ffa502; text-shadow:0 0 5px #ff4757; margin:2px 0;">加藤 純一</h4>
-                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">強力バットスイング / 💥奇跡のバット「ビヨンド」(大回転超ブッ殺し嵐)</p>
+                <!-- ⚾ 加藤純一の追加 -->
+                <div class="card locked" id="char-kato" onclick="selectChar('kato')">
+                    <span class="lock-badge" id="badge-kato">🔒 未解放</span>
+                    <h4 style="color:#f39c12; margin:2px 0;">加藤 純一</h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">右ストレート / 💥ビヨンド(特大バット大回転)</p>
                 </div>
             </div>
             <button class="btn" style="background:#74b9ff; color:#000; border:none; width:100%; margin-top:10px;" onclick="toggleCharModal(false)">決定して戻る</button>
@@ -351,7 +357,7 @@ const charNamesJp = {
     reisen: '鈴仙・優曇華院',
     gojou: '五条 悟',
     roxy: 'ロキシー・ミグルディア',
-    katou: '加藤 純一'
+    kato: '加藤 純一' // 加藤純一の追加
 };
 
 const charImages = { 
@@ -362,19 +368,22 @@ const charImages = {
     reisen: new Image(),
     gojou: new Image(),
     roxy: new Image(),
-    katou: new Image()
+    kato: new Image() // 加藤純一の追加
 };
 charImages.reimu.src = 'reimu.png'; 
 charImages.marisa.src = 'marisa.png'; 
 charImages.youmu.src = 'youmu.png'; 
 charImages.sakuya.src = 'sakuya.png'; 
 charImages.reisen.src = 'reisen.png';
-charImages.gojou.src = 'gojou.png';
+charImages.gojou.src = 'gojou.png'; 
 charImages.roxy.src = 'roxy.png';   
-charImages.katou.src = 'jun_2.png'; // 提供された顔画像に指定
+charImages.kato.src = 'jun_2.png'; // 添付画像をそのまま指定
 
-let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false, katou: false };
+let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false, kato: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
+
+// 🔊 ボイスファイルの読み込み（添付された音声ファイル名に合わせてください）
+let katoVoice = new Audio('jun_voice.mp3'); 
 
 // セーブデータ初期値
 let saveData = { gold: 0, upAtk: 0, upHp: 0, unlockedChars: ['reimu'], volBgm: 0.7, volSE: 0.7 };
@@ -385,9 +394,6 @@ let bgmAudioElement = null;
 let bgmSourceNode = null;
 let bgmGainNode = null;
 let currentBgmPath = "";
-
-// 🔊 加藤純一スペルカード音声用エレメント
-let katouVoiceAudio = new Audio("jun_voice.mp3"); 
 
 function initAudio() {
     if (!audioCtx) {
@@ -430,9 +436,6 @@ function updateBgmVolume() {
     if (bgmGainNode && audioCtx) {
         bgmGainNode.gain.setValueAtTime(saveData.volBgm, audioCtx.currentTime);
     }
-    if (katouVoiceAudio) {
-        katouVoiceAudio.volume = saveData.volSE;
-    }
 }
 
 function handleVolumeSlider(type, val) {
@@ -445,7 +448,6 @@ function handleVolumeSlider(type, val) {
         if (pauseBgmVal) pauseBgmVal.innerText = val + "%";
     } else {
         saveData.volSE = volumeValue;
-        updateBgmVolume();
         document.getElementById('menu-val-se').innerText = val + "%";
         let pauseSeVal = document.getElementById('pause-val-se');
         if (pauseSeVal) pauseSeVal.innerText = val + "%";
@@ -594,7 +596,8 @@ function updateMenuUI() {
     document.getElementById('btn-gacha').disabled = saveData.gold < 200;
     document.getElementById('selected-char-name').innerText = charNamesJp[selectedCharType];
 
-    ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy', 'katou'].forEach(c => {
+    // キャラクターリストに kato を追加
+    ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy', 'kato'].forEach(c => {
         if (saveData.unlockedChars.includes(c)) {
             document.getElementById(`char-${c}`).classList.remove('locked');
             document.getElementById(`badge-${c}`).innerText = "✓ 解放済";
@@ -607,7 +610,8 @@ function drawGacha() {
     if (saveData.gold < 200) return;
     saveData.gold -= 200;
     createSynthSE('levelup'); 
-    const pool = ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy', 'katou'];
+    // ガチャプールに kato を追加
+    const pool = ['marisa', 'youmu', 'sakuya', 'reisen', 'gojou', 'roxy', 'kato'];
     const picked = pool[Math.floor(Math.random() * pool.length)];
     const resultDiv = document.getElementById('gacha-result');
 
@@ -651,10 +655,9 @@ let thunderTimer = 0;
 let reimuBarrierHp = 0, reimuBarrierMaxHp = 0, reimuBarrierCooldown = 0;
 let sakuyaDollKnives = [];
 let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
-let gojouMugenHp = 0, gojouMugenMaxHp = 0, gojouMugenCooldown = 0;
 
-// 👑 加藤純一用変数
-let katouAtkBonus = 0;
+// 五条悟用のシステム変数
+let gojouMugenHp = 0, gojouMugenMaxHp = 0, gojouMugenCooldown = 0;
 
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
 
@@ -727,14 +730,14 @@ function activateSpellCard() {
                 });
             }, i * 60);
         }
-    } else if (player.type === 'katou') {
-        // 👑 加藤純一：奇跡のバット「ビヨンド」大回転ブッ殺し嵐 (5秒間無敵&超巨大近接判定の嵐)
-        spellActiveTimer = 300;
-        if (katouVoiceAudio && saveData.volSE > 0) {
-            katouVoiceAudio.currentTime = 0;
-            katouVoiceAudio.play().catch(e => console.log("Voice Play Error:", e));
-        }
-        createParticles(player.x, player.y, '#ff4757', 50);
+    } else if (player.type === 'kato') {
+        // 加藤純一：ビヨンド（3秒間の巨大バット振り回し＋音声再生）
+        spellActiveTimer = 180;
+        createParticles(player.x, player.y, '#f39c12', 60);
+        try {
+            katoVoice.currentTime = 0;
+            katoVoice.play();
+        } catch (e) { console.log("Voice Play Error:", e); }
     }
 }
 
@@ -744,8 +747,6 @@ function triggerPause() {
     gameActive = false; 
     uiTitle.innerText = "戦術一時停止"; 
     uiOptions.innerHTML = "";
-
-    if (katouVoiceAudio) katouVoiceAudio.pause();
 
     const volBox = document.createElement('div');
     volBox.className = 'volume-container';
@@ -780,7 +781,6 @@ function exitGameToMenu() {
     gameActive = false; uiLayer.style.display = 'none'; gameContainer.style.display = 'none';
     document.getElementById('mainMenu').style.display = 'block'; 
     stopBgm();
-    if (katouVoiceAudio) katouVoiceAudio.pause();
     updateMenuUI();
 }
 
@@ -806,7 +806,7 @@ function getUpgradeOptions() {
             reisen: ['👁️ 習得：幻朧月睨 (狂気波動による全周囲斥力)', '👁️ 強化：幻朧月睨 (錯乱波のダメージと衝撃力が極大化)'],
             gojou: ['👁️‍🗨️ 習得：無下限呪術・常時展開 (自動防御シールド)', '👁️‍🗨️ 強化：無下限呪術 (シールド耐久値上限が2倍にアップ)'],
             roxy: ['🧙‍♀️ 習得：魔術短縮詠唱 (基本連射速度が常時+25%)', '🧙‍♀️ 強化：魔術短縮詠唱 (弾幕発射数が追加で+1)'],
-            katou: ['👑 習得：うんこちゃん (周囲を回る防衛バットが出現)', '👑 強化：狂気の配信者 (周囲バット数が倍増、攻撃力常時+15)']
+            kato: ['👊 習得：右ストレート強化 (通常攻撃の威力アップ)', '👊 強化：右ストレート極 (右ストレートが敵を貫通する)'] // 加藤純一用
         };
         list.push({
             name: pNames[player.type][personalSkillLevel],
@@ -834,8 +834,8 @@ function getUpgradeOptions() {
                     if (personalSkillLevel === 1) player.attackSpeed += 0.4;
                     if (personalSkillLevel === 2) player.multishot += 1;
                 }
-                if (player.type === 'katou') {
-                    if (personalSkillLevel === 2) katouAtkBonus += 15;
+                if (player.type === 'kato') {
+                    if (personalSkillLevel === 1) player.damage *= 1.3;
                 }
             }
         });
@@ -860,9 +860,9 @@ function startGame() {
     else if (selectedCharType === 'youmu') { player.maxHp = 120; player.damage = 18; player.speed = 4.6; player.attackSpeed = 1.5; }
     else if (selectedCharType === 'sakuya') { player.maxHp = 95; player.damage = 15; player.speed = 4.8; player.attackSpeed = 2.2; } 
     else if (selectedCharType === 'reisen') { player.maxHp = 110; player.damage = 20; player.speed = 4.2; player.attackSpeed = 1.3; }
-    else if (selectedCharType === 'gojou') { player.maxHp = 150; player.damage = 25; player.speed = 4.5; player.attackSpeed = 1.2; }
+    else if (selectedCharType === 'gojou') { player.maxHp = 150; player.damage = 25; player.speed = 4.5; player.attackSpeed = 1.2; } 
     else if (selectedCharType === 'roxy') { player.maxHp = 90; player.damage = 28; player.speed = 4.0; player.attackSpeed = 1.1; }  
-    else if (selectedCharType === 'katou') { player.maxHp = 160; player.damage = 35; player.speed = 4.4; player.attackSpeed = 0.9; } // 加藤純一初期ステータス（超パワー型）
+    else if (selectedCharType === 'kato') { player.maxHp = 160; player.damage = 32; player.speed = 4.0; player.attackSpeed = 0.9; }  // 加藤純一のステータス（高体力・高火力）
 
     player.maxHp += (saveData.upHp * 25); player.damage += (saveData.upAtk * 4);
     player.hp = player.maxHp; score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
@@ -871,7 +871,6 @@ function startGame() {
     sakuyaDollKnives = []; youmuHalfGhost = { x: player.x, y: player.y, angle: 0, attackCooldown: 0 };
     reimuBarrierHp = 0; reimuBarrierMaxHp = 0; reimuBarrierCooldown = 0;
     gojouMugenHp = 0; gojouMugenMaxHp = 0; gojouMugenCooldown = 0;
-    katouAtkBonus = 0;
 
     gameActive = true; 
     updateLoop();
@@ -910,10 +909,9 @@ function updateLoop() {
     
     let currentSpeed = player.speed;
     if (player.type === 'youmu' && spellActiveTimer > 0) currentSpeed *= 1.8;
-    if (player.type === 'katou' && spellActiveTimer > 0) currentSpeed *= 1.4; // ビよんど発動中加速
     
     player.x += dx * currentSpeed; player.y += dy * currentSpeed;
-    camera.x = player.x - canvas.width / 2; camera.y = player.y - camera.height / 2;
+    camera.x = player.x - canvas.width / 2; camera.y = player.y - canvas.height / 2;
 
     if (player.type === 'reisen' && personalSkillLevel > 0 && !sakuyaTimeStopActive && player.animTimer % 100 === 0) {
         let waveRadius = personalSkillLevel === 1 ? 160 : 250;
@@ -963,24 +961,6 @@ function updateLoop() {
         }
     }
 
-    // 👑 加藤純一「うんこちゃん」固有防衛スキル処理
-    if (player.type === 'katou' && personalSkillLevel > 0 && !sakuyaTimeStopActive && player.animTimer % 8 === 0) {
-        let bCount = personalSkillLevel === 1 ? 3 : 6;
-        let bRadius = 75;
-        let bDmg = (player.damage + katouAtkBonus) * 0.5;
-        for (let i = 0; i < bCount; i++) {
-            let ang = (player.animTimer * 0.05) + (i * (Math.PI * 2 / bCount));
-            let bx = player.x + Math.cos(ang) * bRadius;
-            let by = player.y + Math.sin(ang) * bRadius;
-            enemies.forEach(e => {
-                if (Math.hypot(e.x - bx, e.y - by) < e.size * 0.7 + 15) {
-                    e.hp -= bDmg;
-                    createParticles(e.x, e.y, '#ffa502', 1);
-                }
-            });
-        }
-    }
-
     if (subWeapons.garlic > 0 && !sakuyaTimeStopActive && player.animTimer % 10 === 0) {
         let radius = 50 + subWeapons.garlic * 15; let dmg = 2 + subWeapons.garlic * 2;
         let didHit = false;
@@ -988,7 +968,7 @@ function updateLoop() {
         if (didHit) createSynthSE('hit');
     }
 
-    bullets = bullets.filter(b => b.type !== 'book' && b.type !== 'slash' && b.type !== 'katou_swing');
+    bullets = bullets.filter(b => b.type !== 'book' && b.type !== 'slash');
     if (subWeapons.book > 0) {
         let count = subWeapons.book + 1; let radius = 90 + subWeapons.book * 10;
         for (let i = 0; i < count; i++) {
@@ -1015,14 +995,12 @@ function updateLoop() {
         }
     }
 
-    // 👑 加藤純一通常スイング近接判定
-    if (player.type === 'katou') {
-        let swingSize = 65;
-        let radius = 55;
-        let finalDmg = player.damage + katouAtkBonus;
-        for (let i = 0; i < player.multishot; i++) {
-            let angle = (player.lastDirX > 0 ? 0 : Math.PI) + Math.sin(player.animTimer * 0.15) * 0.6 + (i * 0.3);
-            bullets.push({ x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius, vx: 0, vy: 0, damage: finalDmg, type: 'katou_swing', size: swingSize });
+    // 加藤純一：スペカ「ビヨンド」の特大バット振り回し判定
+    if (player.type === 'kato' && spellActiveTimer > 0) {
+        if (player.animTimer % 8 === 0) {
+            let swingAngle = player.animTimer * 0.4;
+            bullets.push({ x: player.x + Math.cos(swingAngle)*70, y: player.y + Math.sin(swingAngle)*70, vx: 0, vy: 0, damage: player.damage * 4, type: 'slash', size: 180 });
+            createSynthSE('shoot');
         }
     }
 
@@ -1069,13 +1047,12 @@ function updateLoop() {
                 let angle = baseAngle + (i - (player.multishot-1)/2) * 0.25;
                 bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, damage: player.damage * 1.4, type: 'ice', size: 22 });
             }
-        } else if (player.type === 'katou') {
-            // 👑 前方広範囲バット衝撃波
-            let dirAng = player.lastDirX > 0 ? 0 : Math.PI;
-            let finalDmg = player.damage + katouAtkBonus;
-            for (let i = 0; i < player.multishot + 1; i++) {
-                let angle = dirAng + (i - player.multishot/2) * 0.35;
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, damage: finalDmg * 1.3, type: 'katou_wave', size: 38 });
+        } else if (player.type === 'kato') {
+            // 加藤純一：右ストレート（高威力・高速の拳弾幕）
+            let isPenetrate = (personalSkillLevel === 2);
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = baseAngle + (i - (player.multishot-1)/2) * 0.2;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 16, vy: Math.sin(angle) * 16, damage: player.damage * 1.5, type: 'punch', size: 28, penetrate: isPenetrate });
             }
         }
     } else { player.shootCooldown--; }
@@ -1100,7 +1077,7 @@ function updateLoop() {
         }
 
         b.x += b.vx; b.y += b.vy;
-        if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'katou_swing' && b.type !== 'ao' && Math.hypot(b.x - player.x, b.y - player.y) > 850) { bullets.splice(i, 1); }
+        if (b.type !== 'slash' && b.type !== 'book' && Math.hypot(b.x - player.x, b.y - player.y) > 850) { bullets.splice(i, 1); }
     }
 
     if (!sakuyaTimeStopActive) {
@@ -1130,20 +1107,6 @@ function updateLoop() {
             if (enemy.x + enemy.size/2 > laserLeft && enemy.x - enemy.size/2 < laserLeft + laserWidth && enemy.y + enemy.size/2 > laserTop && enemy.y - enemy.size/2 < laserTop + laserHeight) {
                 enemy.hp -= player.damage * 0.8; createParticles(enemy.x, enemy.y, '#f1c40f', 1);
                 if (player.animTimer % 5 === 0) createSynthSE('hit');
-            }
-        });
-    }
-
-    // 👑 加藤純一「ビヨンド」スペカ発動中判定
-    if (player.type === 'katou' && spellActiveTimer > 0) {
-        let bRange = 280; // 巨大なビよんどの嵐攻撃判定
-        enemies.forEach(e => {
-            if (Math.hypot(e.x - player.x, e.y - player.y) < bRange) {
-                e.hp -= (player.damage + katouAtkBonus) * 0.7;
-                let pushA = Math.atan2(e.y - player.y, e.x - player.x);
-                e.x += Math.cos(pushA) * 15; e.y += Math.sin(pushA) * 15; // 敵をぶっ飛ばす
-                createParticles(e.x, e.y, '#ff4757', 1);
-                if (player.animTimer % 4 === 0) createSynthSE('hit');
             }
         });
     }
@@ -1186,8 +1149,7 @@ function updateLoop() {
 
         const distToPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
         if (distToPlayer < (enemy.size * 0.45 + player.size * 0.4) && !sakuyaTimeStopActive) {
-            // 加藤純一はビよんど(スペカ)発動中は完全無敵
-            if (!(player.type === 'youmu' && spellActiveTimer > 0) && !(player.type === 'katou' && spellActiveTimer > 0)) {
+            if (!(player.type === 'youmu' && spellActiveTimer > 0)) {
                 player.hp -= (enemy.isBoss ? 1.6 : 0.6) * enemy.damageMultiplier; createParticles(enemy.x, enemy.y, '#ff4d4d', 1);
                 if (player.animTimer % 15 === 0) createSynthSE('damage'); 
                 if (player.hp <= 0) { gameOver(); return; }
@@ -1208,7 +1170,7 @@ function updateLoop() {
                 }
 
                 enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); createSynthSE('hit');
-                if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'katou_swing' && b.type !== 'ao' && !b.penetrate) bullets.splice(bIndex, 1);
+                if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'ao' && !b.penetrate) bullets.splice(bIndex, 1);
             }
         }
 
@@ -1258,21 +1220,6 @@ function draw() {
         ctx.fillStyle = `rgba(116, 185, 255, ${alpha * 0.15})`; ctx.fill(); ctx.restore();
     }
 
-    // 👑 加藤純一「うんこちゃん」バット防衛エフェクト
-    if (player.type === 'katou' && personalSkillLevel > 0) {
-        ctx.save();
-        let bCount = personalSkillLevel === 1 ? 3 : 6;
-        let bRadius = 75;
-        for (let i = 0; i < bCount; i++) {
-            let ang = (player.animTimer * 0.05) + (i * (Math.PI * 2 / bCount));
-            let bx = player.x + Math.cos(ang) * bRadius - camera.x;
-            let by = player.y + Math.sin(ang) * bRadius - camera.y;
-            ctx.fillStyle = '#ffcc00'; ctx.strokeStyle = '#e67e22'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        }
-        ctx.restore();
-    }
-
     if (subWeapons.garlic > 0) {
         ctx.save(); let radius = 50 + subWeapons.garlic * 15;
         let grad = ctx.createRadialGradient(player.x - camera.x, player.y - camera.y, radius*0.5, player.x - camera.x, player.y - camera.y, radius);
@@ -1283,27 +1230,6 @@ function draw() {
     if (player.type === 'reisen' && spellActiveTimer > 0) {
         ctx.save(); ctx.strokeStyle = 'rgba(165, 94, 234, ' + (spellActiveTimer/45) + ')'; ctx.lineWidth = 8;
         ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, 350 * (1 - spellActiveTimer/45), 0, Math.PI*2); ctx.stroke(); ctx.restore();
-    }
-
-    // 👑 加藤純一「ビヨンド」スペカ発動中ビジュアル
-    if (player.type === 'katou' && spellActiveTimer > 0) {
-        ctx.save();
-        let bRange = 280;
-        let grad = ctx.createRadialGradient(player.x - camera.x, player.y - camera.y, 10, player.x - camera.x, player.y - camera.y, bRange);
-        grad.addColorStop(0, 'rgba(255, 71, 87, 0.4)');
-        grad.addColorStop(0.5, 'rgba(230, 126, 34, 0.2)');
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, bRange, 0, Math.PI*2); ctx.fill();
-        
-        // 激しく回転する巨大バットライン演出
-        ctx.strokeStyle = '#ff4757'; ctx.lineWidth = 8;
-        ctx.beginPath();
-        let lineAng = player.animTimer * 0.4;
-        ctx.moveTo(player.x - camera.x, player.y - camera.y);
-        ctx.lineTo(player.x - camera.x + Math.cos(lineAng)*bRange, player.y - camera.y + Math.sin(lineAng)*bRange);
-        ctx.stroke();
-        ctx.restore();
     }
 
     gems.forEach(gem => { ctx.save(); ctx.translate(gem.x - camera.x, gem.y - camera.y); if (gem.type === 'exp') { ctx.fillStyle = '#2e86de'; ctx.fillRect(-5, -5, 10, 10); } else { ctx.fillStyle = '#ff3838'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill(); } ctx.restore(); });
@@ -1325,16 +1251,10 @@ function draw() {
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#54a0ff'); grad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
-        } else if (b.type === 'katou_swing') {
-            // 👑 バットの直接スイング判定ビジュアル
-            let grad = ctx.createRadialGradient(0,0,5, 0,0,b.size/2);
-            grad.addColorStop(0, '#fff'); grad.addColorStop(0.6, '#ffa502'); grad.addColorStop(1, 'rgba(255,71,87,0)');
-            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
-        } else if (b.type === 'katou_wave') {
-            // 👑 バット衝撃波
-            let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
-            grad.addColorStop(0, '#ffcc00'); grad.addColorStop(0.7, '#ff4757'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
+        } else if (b.type === 'punch') {
+            // 加藤純一の右ストレート描画
+            ctx.fillStyle = '#f39c12'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); ctx.stroke();
         }
         ctx.restore(); 
     });
@@ -1368,13 +1288,12 @@ function draw() {
     ctx.save(); ctx.translate(player.x - camera.x, player.y - camera.y); if (player.lastDirX < 0) ctx.scale(-1, 1);
     const bob = Math.sin(player.animTimer * 0.12) * 2;
     if (player.type === 'youmu' && spellActiveTimer > 0) ctx.globalAlpha = 0.6 + Math.sin(player.animTimer*0.5)*0.3;
-    if (player.type === 'katou' && spellActiveTimer > 0) ctx.scale(1.3, 1.3); // スペカ中巨大化
     
     if (imageLoaded[player.type]) { 
         ctx.imageSmoothingEnabled = false; 
         ctx.drawImage(charImages[player.type], -player.size/2, -player.size/2 + bob, player.size, player.size); 
     } else { 
-        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea', gojou: '#ffffff', roxy: '#54a0ff', katou: '#ff1744' };
+        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea', gojou: '#ffffff', roxy: '#54a0ff', kato: '#f39c12' };
         ctx.fillStyle = colors[player.type]; ctx.beginPath(); ctx.arc(0, bob, player.size/2, 0, Math.PI*2); ctx.fill(); 
     }
     ctx.restore(); ctx.globalAlpha = 1.0;
@@ -1423,7 +1342,6 @@ function levelUp() {
 function gameOver() {
     gameActive = false; uiTitle.innerText = "満身創痍"; saveData.gold += goldEarned; saveGame();
     createSynthSE('gameover'); 
-    if (katouVoiceAudio) katouVoiceAudio.pause();
     const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0');
     uiOptions.innerHTML = `<p style="margin:5px 0; font-size:16px;">リザルト</p><p style="margin:5px 0; font-size:14px;">防衛時間: ${min}分${sec}秒</p><p style="margin:5px 0; font-size:14px;">回収POINT: <span class="p-text">+${goldEarned}</span> 🔴</p>`;
     const menuBtn = document.createElement('button'); menuBtn.className = 'btn'; menuBtn.innerText = '里へ戻る';
