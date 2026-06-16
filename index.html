@@ -48,41 +48,28 @@
             box-sizing: border-box;
         }
 
-        /* 📊 メインメニュー：横幅を少し広げて、要素を収まりやすく */
+        /* 📊 メインメニュー：横幅を広げて、要素を収まりやすく */
         .menu-window {
             background: rgba(15, 15, 25, 0.96);
             border: 3px solid #ff4757;
             padding: 20px;
             border-radius: 24px;
             text-align: center;
-            max-width: 650px;
-            width: 90%;
+            max-width: 800px; /* 650pxから800pxに拡張 */
+            width: 95%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.8);
             z-index: 20;
             max-height: 95vh;
             overflow-y: auto;
         }
 
-        /* 📦 左右2カラムにするためのフレックスボックス */
+        /* 📦 2×2のグリッド配置にして縦長感を解消 */
         .menu-layout {
-            display: flex;
-            flex-direction: row;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 15px;
-            margin-top: 10px;
-        }
-        .menu-col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        /* スマホ等の縦長画面では従来通り縦並びにする */
-        @media (max-width: 600px) {
-            .menu-layout {
-                flex-direction: column;
-                gap: 10px;
-            }
+            margin-top: 15px;
+            text-align: left;
         }
 
         .modal-layer {
@@ -222,65 +209,65 @@
 
     <!-- メインメニュー -->
     <div id="mainMenu" class="menu-window">
-        <h1 style="color:#ff4757; margin: 0; font-size: 22px; letter-spacing: 1px;">☯️ 東方生存郷 ☯️</h1>
-        <p style="font-size: 12px; color: #a4b0be; margin: 2px 0 10px 0; font-style: italic;">~ Border of Survivors</p>
-        <p style="margin: 5px 0;">所持POINT: <span id="menuGold" class="p-text">0</span> 🔴</p>
+        <h1 style="color:#ff4757; margin: 0; font-size: 24px; letter-spacing: 1px;">☯️ 東方生存郷 ☯️</h1>
+        <p style="font-size: 13px; color: #a4b0be; margin: 2px 0 10px 0; font-style: italic;">~ Border of Survivors</p>
+        <p style="margin: 5px 0; font-size: 16px;">所持POINT: <span id="menuGold" class="p-text">0</span> 🔴</p>
         
-        <!-- 📦 ここから左右2カラムのレイアウト -->
+        <!-- 📦 ここから2×2グリッドレイアウト -->
         <div class="menu-layout">
             
-            <!-- ⬅️ 左カラム -->
-            <div class="menu-col">
-                <!-- ① ガチャ -->
-                <div class="menu-section" style="border-color: #ffcc00; background: rgba(255,204,0,0.03);">
+            <!-- ① ガチャ -->
+            <div class="menu-section" style="border-color: #ffcc00; background: rgba(255,204,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
                     <h4 class="section-title">⛩️ 博麗神社 賽銭箱ガチャ</h4>
+                    <p style="font-size: 11px; color: #a4b0be; margin: 0 0 8px 0;">新しい仲間を一定確率で解放します。</p>
+                </div>
+                <div>
                     <button class="btn" id="btn-gacha" style="background:#ffcc00; color:#000; border:none; width:100%; margin:4px 0; padding: 10px 0;" onclick="drawGacha()">ガチャを引く (200🔴)</button>
                     <div id="gacha-result" style="font-size:11px; margin-top:3px; font-weight:bold; height:15px; text-align:center; color:#2ed573;"></div>
                 </div>
+            </div>
 
-                <!-- ② キャラクター選択 -->
-                <div class="menu-section">
+            <!-- ② キャラクター選択 -->
+            <div class="menu-section" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
                     <h4 class="section-title" style="color: #74b9ff;">👥 出撃キャラクター</h4>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                        <div>
-                            <div id="selected-char-name" style="font-size: 16px; font-weight: bold; color: #ff4757;">博麗 霊夢</div>
-                        </div>
-                        <button class="btn" style="padding: 8px 14px; font-size: 12px; margin: 0; border-color:#74b9ff; color:#74b9ff;" onclick="toggleCharModal(true)">仲間を募る ⛩️</button>
+                    <p style="font-size: 11px; color: #a4b0be; margin: 0 0 8px 0;">現在選択中の出撃キャラクターです。</p>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30,30,48,0.5); padding: 8px 12px; border-radius: 12px; border: 1px solid #2f3542;">
+                    <div id="selected-char-name" style="font-size: 16px; font-weight: bold; color: #ff4757;">博麗 霊夢</div>
+                    <button class="btn" style="padding: 8px 14px; font-size: 12px; margin: 0; border-color:#74b9ff; color:#74b9ff;" onclick="toggleCharModal(true)">仲間を募る ⛩️</button>
+                </div>
+            </div>
+
+            <!-- ③ 能力解放 -->
+            <div class="menu-section">
+                <h4 class="section-title" style="color: #2ed573;">🔮 能力解放（永続強化）</h4>
+                <div style="font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>⚔️ 攻撃力 Lv.<span id="up-atk-lv">0</span></span>
+                        <button class="btn" style="padding:5px 10px; font-size:11px; margin:0;" id="btn-up-atk" onclick="buyPermanent('atk')">消費: <span id="cost-atk">50</span>🔴</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>❤️ 体力倍率 Lv.<span id="up-hp-lv">0</span></span>
+                        <button class="btn" style="padding:5px 10px; font-size:11px; margin:0;" id="btn-up-hp" onclick="buyPermanent('hp')">消費: <span id="cost-hp">50</span>🔴</button>
                     </div>
                 </div>
             </div>
 
-            <!-- ➡️ 右カラム -->
-            <div class="menu-col">
-                <!-- ③ 能力解放 -->
-                <div class="menu-section">
-                    <h4 class="section-title" style="color: #2ed573;">🔮 能力解放（永続強化）</h4>
-                    <div style="font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>⚔️ 攻撃力 Lv.<span id="up-atk-lv">0</span></span>
-                            <button class="btn" style="padding:5px 10px; font-size:11px; margin:0;" id="btn-up-atk" onclick="buyPermanent('atk')">消費: <span id="cost-atk">50</span>🔴</button>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>❤️ 体力倍率 Lv.<span id="up-hp-lv">0</span></span>
-                            <button class="btn" style="padding:5px 10px; font-size:11px; margin:0;" id="btn-up-hp" onclick="buyPermanent('hp')">消費: <span id="cost-hp">50</span>🔴</button>
-                        </div>
+            <!-- ④ 音量設定 -->
+            <div class="menu-section" style="display: flex; flex-direction: column; justify-content: center;">
+                <h4 class="section-title" style="color: #a4b0be; margin-bottom: 12px;">⚙️ 音量設定</h4>
+                <div class="volume-container" style="border: none; padding: 0;">
+                    <div class="volume-row">
+                        <span>BGM:</span>
+                        <input type="range" id="menu-slider-bgm" min="0" max="100" value="70" oninput="handleVolumeSlider('bgm', this.value)">
+                        <span id="menu-val-bgm" class="volume-val">70%</span>
                     </div>
-                </div>
-
-                <!-- ④ 音量設定 -->
-                <div class="menu-section">
-                    <h4 class="section-title" style="color: #a4b0be;">⚙️ 音量設定</h4>
-                    <div class="volume-container" style="border: none; padding: 0;">
-                        <div class="volume-row">
-                            <span>BGM:</span>
-                            <input type="range" id="menu-slider-bgm" min="0" max="100" value="70" oninput="handleVolumeSlider('bgm', this.value)">
-                            <span id="menu-val-bgm" class="volume-val">70%</span>
-                        </div>
-                        <div class="volume-row">
-                            <span>SE:</span>
-                            <input type="range" id="menu-slider-se" min="0" max="100" value="70" oninput="handleVolumeSlider('se', this.value)">
-                            <span id="menu-val-se" class="volume-val">70%</span>
-                        </div>
+                    <div class="volume-row">
+                        <span>SE:</span>
+                        <input type="range" id="menu-slider-se" min="0" max="100" value="70" oninput="handleVolumeSlider('se', this.value)">
+                        <span id="menu-val-se" class="volume-val">70%</span>
                     </div>
                 </div>
             </div>
