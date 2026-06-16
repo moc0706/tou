@@ -48,7 +48,7 @@
             box-sizing: border-box;
         }
 
-        /* 📊 メインメニュー：横幅を広げて、要素を収まりやすく */
+        /* 📊 メインメニュー */
         .menu-window {
             background: rgba(15, 15, 25, 0.96);
             border: 3px solid #ff4757;
@@ -63,7 +63,7 @@
             overflow-y: auto;
         }
 
-        /* 📦 2×2のグリッド配置にして縦長感を解消 */
+        /* 📦 2×2のグリッド配置 */
         .menu-layout {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -128,6 +128,7 @@
         .card.selected { border-color: #ff4757; background: #222536; box-shadow: 0 0 10px rgba(255,71,87,0.3); }
         .card.locked { opacity: 0.4; cursor: not-allowed; background: #08080f; }
         .lock-badge { position: absolute; top: 5px; right: 10px; color: #ff4757; font-size: 11px; font-weight: bold; }
+        .rank-badge { font-size: 11px; color: #ffcc00; font-weight: bold; margin-left: 5px; }
         
         .p-text { color: #ffcc00; font-weight: bold; font-size: 20px; }
         #controls { margin-top: 10px; color: #a4b0be; font-size: 11px; text-align: center; padding: 0 10px; }
@@ -217,7 +218,7 @@
             <div class="menu-section" style="border-color: #ffcc00; background: rgba(255,204,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h4 class="section-title">⛩️ 博麗神社 賽銭箱ガチャ</h4>
-                    <p style="font-size: 11px; color: #a4b0be; margin: 0 0 8px 0;">新しい仲間を一定確率で解放します。</p>
+                    <p style="font-size: 11px; color: #a4b0be; margin: 0 0 8px 0;">仲間を募ります。被った場合は最大10回まで限界突破（全ステータス+5%）します！</p>
                 </div>
                 <div>
                     <button class="btn" id="btn-gacha" style="background:#ffcc00; color:#000; border:none; width:100%; margin:4px 0; padding: 10px 0;" onclick="drawGacha()">ガチャを引く (200🔴)</button>
@@ -231,7 +232,10 @@
                     <p style="font-size: 11px; color: #a4b0be; margin: 0 0 8px 0;">現在選択中の出撃キャラクターです。</p>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30,30,48,0.5); padding: 8px 12px; border-radius: 12px; border: 1px solid #2f3542;">
-                    <div id="selected-char-name" style="font-size: 16px; font-weight: bold; color: #ff4757;">博麗 霊夢</div>
+                    <div style="display:flex; flex-direction:column;">
+                        <div id="selected-char-name" style="font-size: 16px; font-weight: bold; color: #ff4757;">博麗 霊夢</div>
+                        <div id="selected-char-status" style="font-size: 11px; color: #ffcc00; font-weight: bold; margin-top:2px;">0凸 (ステータス正常)</div>
+                    </div>
                     <button class="btn" style="padding: 8px 14px; font-size: 12px; margin: 0; border-color:#74b9ff; color:#74b9ff;" onclick="toggleCharModal(true)">仲間を募る ⛩️</button>
                 </div>
             </div>
@@ -275,27 +279,28 @@
             <h3 style="color:#74b9ff; margin-top:0;">⛩️ 参戦キャラクター一覧</h3>
             <div class="grid">
                 <div class="card selected" id="char-reimu" onclick="selectChar('reimu')">
-                    <h4 style="color:#ff4757; margin:2px 0;">博麗 霊夢</h4>
+                    <span class="lock-badge" style="color:#2ed573;">✓ 出撃可能</span>
+                    <h4 style="color:#ff4757; margin:2px 0;">博麗 霊夢 <span id="rank-reimu" class="rank-badge"></span></h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">追尾札 / 💥夢想封印(全体攻撃)</p>
                 </div>
                 <div class="card locked" id="char-marisa" onclick="selectChar('marisa')">
                     <span class="lock-badge" id="badge-marisa">🔒 未解放</span>
-                    <h4 style="color:#eccc68; margin:2px 0;">霧雨 魔理沙</h4>
+                    <h4 style="color:#eccc68; margin:2px 0;">霧雨 魔理沙 <span id="rank-marisa" class="rank-badge"></span></h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">星弾幕 / 💥マスタースパーク(極太レーザー)</p>
                 </div>
                 <div class="card locked" id="char-youmu" onclick="selectChar('youmu')">
                     <span class="lock-badge" id="badge-youmu">🔒 未解放</span>
-                    <h4 style="color:#2ed573; margin:2px 0;">魂魄 妖夢</h4>
+                    <h4 style="color:#2ed573; margin:2px 0;">魂魄 妖夢 <span id="rank-youmu" class="rank-badge"></span></h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">旋回剣気 / 💥待宵反射星(無敵巨大化)</p>
                 </div>
                 <div class="card locked" id="char-sakuya" onclick="selectChar('sakuya')">
                     <span class="lock-badge" id="badge-sakuya">🔒 未解放</span>
-                    <h4 style="color:#74b9ff; margin:2px 0;">十六夜 咲夜</h4>
+                    <h4 style="color:#74b9ff; margin:2px 0;">十六夜 咲夜 <span id="rank-sakuya" class="rank-badge"></span></h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">高速投擲ナイフ / 💥ザ・ワールド(5秒時間停止)</p>
                 </div>
                 <div class="card locked" id="char-reisen" onclick="selectChar('reisen')">
                     <span class="lock-badge" id="badge-reisen">🔒 未解放</span>
-                    <h4 style="color:#a55eea; margin:2px 0;">鈴仙・優曇華院</h4>
+                    <h4 style="color:#a55eea; margin:2px 0;">鈴仙・優曇華院 <span id="rank-reisen" class="rank-badge"></span></h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">前後貫通レーザー / 💥赤眼催眠(周囲超爆発)</p>
                 </div>
             </div>
@@ -338,8 +343,16 @@ charImages.reimu.src = 'reimu.png'; charImages.marisa.src = 'marisa.png'; charIm
 let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
 
-// セーブデータ初期値
-let saveData = { gold: 0, upAtk: 0, upHp: 0, unlockedChars: ['reimu'], volBgm: 0.7, volSE: 0.7 };
+// セーブデータ初期値 (charRanksで各キャラの凸数を管理 最大10)
+let saveData = { 
+    gold: 0, 
+    upAtk: 0, 
+    upHp: 0, 
+    unlockedChars: ['reimu'], 
+    charRanks: { reimu: 0, marisa: 0, youmu: 0, sakuya: 0, reisen: 0 },
+    volBgm: 0.7, 
+    volSE: 0.7 
+};
 
 // --- 🎧 オーディオエンジン ---
 let audioCtx = null;
@@ -378,7 +391,6 @@ function playBgm(filename) {
     updateBgmVolume();
 }
 
-// BGMを停止する処理を追加
 function stopBgm() {
     if (bgmAudioElement) {
         bgmAudioElement.pause();
@@ -517,9 +529,10 @@ function createSynthSE(type) {
 }
 
 function loadGame() {
-    const saved = localStorage.getItem('touhou_survivors_save_v5');
+    const saved = localStorage.getItem('touhou_survivors_save_v6');
     if (saved) { try { saveData = Object.assign(saveData, JSON.parse(saved)); } catch(e) {} }
     if (!saveData.unlockedChars) saveData.unlockedChars = ['reimu'];
+    if (!saveData.charRanks) saveData.charRanks = { reimu: 0, marisa: 0, youmu: 0, sakuya: 0, reisen: 0 };
     if (saveData.volBgm === undefined) saveData.volBgm = 0.7;
     if (saveData.volSE === undefined) saveData.volSE = 0.7;
     
@@ -531,7 +544,7 @@ function loadGame() {
     updateMenuUI();
 }
 
-function saveGame() { localStorage.setItem('touhou_survivors_save_v5', JSON.stringify(saveData)); }
+function saveGame() { localStorage.setItem('touhou_survivors_save_v6', JSON.stringify(saveData)); }
 function getCost(type, currentLv) { return (currentLv + 1) * 50; }
 
 function toggleCharModal(show) { 
@@ -548,13 +561,30 @@ function updateMenuUI() {
     document.getElementById('btn-up-atk').disabled = saveData.gold < getCost('atk', saveData.upAtk);
     document.getElementById('btn-up-hp').disabled = saveData.gold < getCost('hp', saveData.upHp);
     document.getElementById('btn-gacha').disabled = saveData.gold < 200;
+    
+    // 選択中のキャラ名と凸情報を表示
     document.getElementById('selected-char-name').innerText = charNamesJp[selectedCharType];
+    let currentRank = saveData.charRanks[selectedCharType] || 0;
+    if (currentRank >= 10) {
+        document.getElementById('selected-char-status').innerText = `★10 [最大限界突破!! 全ステ+50%]`;
+    } else {
+        document.getElementById('selected-char-status').innerText = `${currentRank}凸 (限界突破補正: 全ステ+${currentRank * 5}%)`;
+    }
 
-    ['marisa', 'youmu', 'sakuya', 'reisen'].forEach(c => {
-        if (saveData.unlockedChars.includes(c)) {
-            document.getElementById(`char-${c}`).classList.remove('locked');
-            document.getElementById(`badge-${c}`).innerText = "✓ 解放済";
-            document.getElementById(`badge-${c}`).style.color = "#2ed573";
+    // 各キャラカードのUIバッジ・凸表記更新
+    ['reimu', 'marisa', 'youmu', 'sakuya', 'reisen'].forEach(c => {
+        let rNode = document.getElementById(`rank-${c}`);
+        let rankVal = saveData.charRanks[c] || 0;
+        if (rNode) {
+            rNode.innerText = rankVal >= 10 ? `(★10 MAX)` : (rankVal > 0 ? `(★${rankVal})` : `(0凸)`);
+        }
+
+        if (c !== 'reimu') {
+            if (saveData.unlockedChars.includes(c)) {
+                document.getElementById(`char-${c}`).classList.remove('locked');
+                document.getElementById(`badge-${c}`).innerText = "✓ 解放済";
+                document.getElementById(`badge-${c}`).style.color = "#2ed573";
+            }
         }
     });
 }
@@ -563,16 +593,34 @@ function drawGacha() {
     if (saveData.gold < 200) return;
     saveData.gold -= 200;
     createSynthSE('levelup'); 
-    const pool = ['marisa', 'youmu', 'sakuya', 'reisen'];
+    
+    // 全5キャラからランダム抽選
+    const pool = ['reimu', 'marisa', 'youmu', 'sakuya', 'reisen'];
     const picked = pool[Math.floor(Math.random() * pool.length)];
     const resultDiv = document.getElementById('gacha-result');
 
-    if (saveData.unlockedChars.includes(picked)) {
-        saveData.gold += 100; resultDiv.style.color = "#eccc68"; resultDiv.innerText = `被り：${charNamesJp[picked]} (100🔴返還)`;
+    if (!saveData.unlockedChars.includes(picked)) {
+        // 新規解放
+        saveData.unlockedChars.push(picked);
+        saveData.charRanks[picked] = 0;
+        resultDiv.style.color = "#2ed573"; 
+        resultDiv.innerText = `🎉 新解放：${charNamesJp[picked]}`;
     } else {
-        saveData.unlockedChars.push(picked); resultDiv.style.color = "#2ed573"; resultDiv.innerText = `🎉 新解放：${charNamesJp[picked]}`;
+        // キャラ被り時の処理（最大10凸まで）
+        let curRank = saveData.charRanks[picked] || 0;
+        if (curRank < 10) {
+            saveData.charRanks[picked] = curRank + 1;
+            resultDiv.style.color = "#ffcc00";
+            resultDiv.innerText = `💥 被り限界突破！：${charNamesJp[picked]} (★${curRank + 1}になりました！)`;
+        } else {
+            // すでに10凸（完凸）している場合は救済POINT返還
+            saveData.gold += 150;
+            resultDiv.style.color = "#74b9ff";
+            resultDiv.innerText = `👑 完凸済被り：${charNamesJp[picked]} (150🔴返還)`;
+        }
     }
-    saveGame(); updateMenuUI();
+    saveGame(); 
+    updateMenuUI();
 }
 
 function buyPermanent(type) {
@@ -591,7 +639,7 @@ function selectChar(type) {
     createSynthSE('click');
     document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
     document.getElementById(`char-${type}`).classList.add('selected');
-    document.getElementById('selected-char-name').innerText = charNamesJp[type];
+    updateMenuUI();
 }
 
 // --- ゲームシステム変数 ---
@@ -611,7 +659,6 @@ let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
 
 window.addEventListener('click', () => {
-    // 画面クリック時のメニューBGM自動再生を削除（SEなどのAudioContext初期化のみ残す）
     if (!gameActive) {
         initAudio();
     }
@@ -700,7 +747,7 @@ function triggerPause() {
 function exitGameToMenu() {
     gameActive = false; uiLayer.style.display = 'none'; gameContainer.style.display = 'none';
     document.getElementById('mainMenu').style.display = 'block'; 
-    stopBgm(); // メニューに戻る際、ゲームのBGMを止める処理に変更
+    stopBgm();
     updateMenuUI();
 }
 
@@ -753,20 +800,31 @@ function startGame() {
     document.getElementById('mainMenu').style.display = 'none';
     gameContainer.style.display = 'block';
     document.getElementById('gacha-result').innerText = "";
-    playBgm('bgm_game.mp3'); // ここでゲームの戦闘BGMが初めて再生されます
+    playBgm('bgm_game.mp3'); 
 
     if (window.innerHeight > window.innerWidth) { canvas.width = 580; canvas.height = 960; } 
     else { canvas.width = 960; canvas.height = 580; }
 
     player = { x: canvas.width/2, y: canvas.height/2, size: 32, shootCooldown: 0, multishot: 1, magnetRange: 140, type: selectedCharType, animTimer: 0, lastDirX: 1, isMoving: false };
 
+    // 各キャラのベース性能
     if (selectedCharType === 'reimu') { player.maxHp = 100; player.damage = 16; player.speed = 4.3; player.attackSpeed = 1.4; }
     else if (selectedCharType === 'marisa') { player.maxHp = 85; player.damage = 22; player.speed = 5.2; player.attackSpeed = 1.8; }
     else if (selectedCharType === 'youmu') { player.maxHp = 120; player.damage = 18; player.speed = 4.6; player.attackSpeed = 1.5; }
     else if (selectedCharType === 'sakuya') { player.maxHp = 95; player.damage = 15; player.speed = 4.8; player.attackSpeed = 2.2; } 
     else if (selectedCharType === 'reisen') { player.maxHp = 110; player.damage = 20; player.speed = 4.2; player.attackSpeed = 1.3; }
 
+    // 📈 限界突破（凸）システムによるステータスアップ倍率の計算 (1凸ごとに+5% 永続強化)
+    let rankCount = saveData.charRanks[selectedCharType] || 0;
+    let rankMultiplier = 1.0 + (rankCount * 0.05);
+
+    player.maxHp = Math.round(player.maxHp * rankMultiplier);
+    player.damage = Math.round(player.damage * rankMultiplier);
+    player.speed = player.speed * rankMultiplier;
+
+    // ショップの永続強化を加算
     player.maxHp += (saveData.upHp * 25); player.damage += (saveData.upAtk * 4);
+    
     player.hp = player.maxHp; score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
     bullets = []; enemies = []; gems = []; particles = []; spawnTimer = 0; spellCooldown = 0; spellActiveTimer = 0;
     sakuyaTimeStopActive = false; subWeapons = { garlic: 0, book: 0, thunder: 0 }; personalSkillLevel = 0; thunderTimer = 0;
@@ -1156,7 +1214,7 @@ function gameOver() {
     menuBtn.onclick = () => { 
         createSynthSE('click');
         uiLayer.style.display = 'none'; gameContainer.style.display = 'none'; document.getElementById('mainMenu').style.display = 'block'; 
-        stopBgm(); // ゲームオーバーからメニューに戻る際もBGMを停止
+        stopBgm(); 
         updateMenuUI(); 
     };
     uiOptions.appendChild(menuBtn); uiLayer.style.display = 'flex';
