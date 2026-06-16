@@ -307,7 +307,7 @@
                 <div class="card locked" id="char-kato" onclick="selectChar('kato')">
                     <span class="lock-badge" id="badge-kato">🔒 未解放</span>
                     <h4 style="color:#ffaa00; text-shadow:0 0 5px #ff4757; margin:2px 0;">加藤 純一</h4>
-                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">上下方向怒号弾(高火力) / 💥ビヨンドマックス・フルスイング(超剛力一回転薙ぎ払い＆豪快吹っ飛び)</p>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">怒号弾(高火力) / 💥ビヨンドマックス・フルスイング(超剛力薙ぎ払い＆豪快吹っ飛び)</p>
                 </div>
             </div>
             <button class="btn" style="background:#74b9ff; color:#000; border:none; width:100%; margin-top:10px;" onclick="toggleCharModal(false)">決定して戻る</button>
@@ -370,7 +370,7 @@ charImages.sakuya.src = 'sakuya.png';
 charImages.reisen.src = 'reisen.png';
 charImages.gojou.src = 'gojou.png'; 
 charImages.roxy.src = 'roxy.png';   
-charImages.kato.src = 'jun.png';
+charImages.kato.src = 'jun.png';   // 画像アセットの割り当て
 
 let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false, kato: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
@@ -400,7 +400,7 @@ function initAudio() {
         bgmGainNode.connect(audioCtx.destination);
 
         katoVoiceElement = new Audio();
-        katoVoiceElement.src = 'jun.mp3';
+        katoVoiceElement.src = 'jun.mp3'; // ご指定の音声ファイルを適用
         katoVoiceElement.crossOrigin = "anonymous";
         const katoSource = audioCtx.createMediaElementSource(katoVoiceElement);
         const katoGain = audioCtx.createGain();
@@ -698,8 +698,7 @@ function activateSpellCard() {
         }
         createSynthSE('bomb');
         spellActiveTimer = 60; 
-        // ぐるっと綺麗に一回転させるため、開始角度を0に設定
-        katoBatSwingAngle = 0; 
+        katoBatSwingAngle = player.lastDirX > 0 ? -Math.PI * 0.6 : Math.PI * 1.6; 
     } else {
         createSynthSE('bomb'); 
     }
@@ -714,676 +713,701 @@ function activateSpellCard() {
     } else if (player.type === 'sakuya') {
         spellActiveTimer = 300; sakuyaTimeStopActive = true;
     } else if (player.type === 'reisen') {
-        createParticles(player.x, player.y, '#a55eea', 40);
-        enemies.forEach(e => {
-            let dist = Math.hypot(e.x - player.x, e.y - player.y);
-            if (dist < 250) { e.hp -= player.damage * 6; createParticles(e.x, e.y, '#ff4d4d', 8); }
-        });
+        spellActiveTimer = 45; createParticles(player.x, player.y, '#a55eea', 50);
+        enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < 350) { e.hp -= player.damage * 6; createParticles(e.x, e.y, '#fff', 6); } });
     } else if (player.type === 'gojou') {
-        spellActiveTimer = 600; sakuyaTimeStopActive = true;
+        spellActiveTimer = 600;
+        sakuyaTimeStopActive = true; 
+        createParticles(player.x, player.y, '#74b9ff', 60);
+        enemies.forEach(e => { e.hp -= player.damage * 3; });
     } else if (player.type === 'roxy') {
-        spellActiveTimer = 240;
+        spellActiveTimer = 90;
+        for (let i = 0; i < 25; i++) {
+            setTimeout(() => {
+                if (!gameActive) return;
+                let rx = player.x + (Math.random() - 0.5) * 800;
+                let ry = player.y + (Math.random() - 0.5) * 600;
+                createParticles(rx, ry, '#54a0ff', 12);
+                createParticles(rx, ry, '#eccc68', 8);
+                createSynthSE('bomb');
+                enemies.forEach(e => {
+                    if (Math.hypot(e.x - rx, e.y - ry) < 180) {
+                        e.hp -= player.damage * 2.5;
+                    }
+                });
+            }, i * 60);
+        }
     }
 }
 
 function triggerPause() {
-    if (!gameActive) return;
+    if (!gameActive && uiLayer.style.display === 'flex' && uiTitle.innerText !== "戦術一時停止") return;
     createSynthSE('click');
-    gameActive = false;
-    uiTitle.innerText = "戦術一時停止";
+    gameActive = false; 
+    uiTitle.innerText = "戦術一時停止"; 
     uiOptions.innerHTML = "";
-    
-    const container = document.createElement('div');
-    container.className = "volume-container";
-    container.style.width = "90%";
-    container.style.margin = "10px auto";
-    
-    const rowBgm = document.createElement('div'); rowBgm.className = "volume-row";
-    rowBgm.innerHTML = `<span>BGM:</span><input type="range" id="pause-slider-bgm" min="0" max="100" value="${Math.round(saveData.volBgm*100)}"><span id="pause-val-bgm" class="volume-val">${Math.round(saveData.volBgm*100)}%</span>`;
-    
-    const rowSe = document.createElement('div'); rowSe.className = "volume-row";
-    rowSe.innerHTML = `<span>SE:</span><input type="range" id="pause-slider-se" min="0" max="100" value="${Math.round(saveData.volSE*100)}"><span id="pause-val-se" class="volume-val">${Math.round(saveData.volSE*100)}%</span>`;
-    
-    container.appendChild(rowBgm); container.appendChild(rowSe);
-    uiOptions.appendChild(container);
-    
-    setTimeout(() => {
-        const sBgm = document.getElementById('pause-slider-bgm');
-        const sSe = document.getElementById('pause-slider-se');
-        if(sBgm) sBgm.oninput = (e) => handleVolumeSlider('bgm', e.target.value);
-        if(sSe) sSe.oninput = (e) => handleVolumeSlider('se', e.target.value);
-    }, 50);
 
-    const resumeBtn = document.createElement('button'); resumeBtn.className = 'btn'; resumeBtn.innerText = '再開する';
+    const volBox = document.createElement('div');
+    volBox.className = 'volume-container';
+    volBox.style.width = '90%';
+    volBox.style.marginBottom = '15px';
+    volBox.innerHTML = `
+        <div class="volume-row">
+            <span>BGM:</span>
+            <input type="range" id="pause-slider-bgm" min="0" max="100" value="${Math.round(saveData.volBgm*100)}" oninput="handleVolumeSlider('bgm', this.value)">
+            <span id="pause-val-bgm" class="volume-val">${Math.round(saveData.volBgm*100)}%</span>
+        </div>
+        <div class="volume-row">
+            <span>SE:</span>
+            <input type="range" id="pause-slider-se" min="0" max="100" value="${Math.round(saveData.volSE*100)}" oninput="handleVolumeSlider('se', this.value)">
+            <span id="pause-val-se" class="volume-val">${Math.round(saveData.volSE*100)}%</span>
+        </div>
+    `;
+    uiOptions.appendChild(volBox);
+
+    const resumeBtn = document.createElement('button'); resumeBtn.className = 'btn'; resumeBtn.innerText = '戦線に復帰 (Esc)';
     resumeBtn.onclick = () => { createSynthSE('click'); uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
     
-    const exitBtn = document.createElement('button'); exitBtn.className = 'btn'; exitBtn.innerText = '里へ戻る(撤退)';
-    exitBtn.style.borderColor = "#a4b0be"; exitBtn.style.color = "#a4b0be";
-    exitBtn.onclick = () => { createSynthSE('click'); stopBgm(); uiLayer.style.display = 'none'; gameContainer.style.display = 'none'; document.getElementById('mainMenu').style.display = 'block'; loadGame(); };
+    const exitBtn = document.createElement('button'); exitBtn.className = 'btn'; exitBtn.innerText = '里へ退却';
+    exitBtn.onclick = () => { createSynthSE('click'); exitGameToMenu(); };
     
-    uiOptions.appendChild(resumeBtn); uiOptions.appendChild(exitBtn);
+    uiOptions.appendChild(resumeBtn); 
+    uiOptions.appendChild(exitBtn); 
     uiLayer.style.display = 'flex';
 }
 
+function exitGameToMenu() {
+    gameActive = false; uiLayer.style.display = 'none'; gameContainer.style.display = 'none';
+    document.getElementById('mainMenu').style.display = 'block'; 
+    stopBgm();
+    updateMenuUI();
+}
+
+function getUpgradeOptions() {
+    let list = [
+        { name: '🔮 弾幕増幅 (同時発射数 +1)', effect: () => player.multishot += 1 },
+        { name: '⚡ 連射力向上 (攻撃速度 +30%)', effect: () => player.attackSpeed += 0.3 },
+        { name: '💥 霊力限界突破 (与ダメ +8)', effect: () => player.damage += 8 },
+        { name: '🧲 霊気範囲拡大 (吸い込み +70)', effect: () => player.magnetRange += 70 },
+        { name: '💖 御神酒の癒やし (HPを65回復)', effect: () => player.hp = Math.min(player.maxHp, player.hp + 65) },
+        
+        { name: subWeapons.garlic === 0 ? '🧄 習得：妖々夢の怪火' : `🧄 強化：妖々夢の怪火 (Lv.${subWeapons.garlic + 1})`, effect: () => subWeapons.garlic++ },
+        { name: subWeapons.book === 0 ? '📖 習得：魔導書「ラジカルキマイラ」' : `📖 強化：魔導書 (Lv.${subWeapons.book + 1})`, effect: () => subWeapons.book++ },
+        { name: subWeapons.thunder === 0 ? '⚡ 習得：聖喇の雷撃' : `⚡ 強化：聖喇の雷撃 (Lv.${subWeapons.thunder + 1})`, effect: () => subWeapons.thunder++ }
+    ];
+
+    if (personalSkillLevel < 2 && Math.random() < 0.45) {
+        let pNames = {
+            reimu: ['☯️ 習得：博麗の結界 (耐久制バリア＆威力UP)', '☯️ 強化：博麗の結界 (耐久値増加＆再生クール短縮)'],
+            marisa: ['🧹 習得：ミニ八卦炉・暴走 (通常星弾が貫通化)', '🧹 強化：ミニ八卦炉・暴走 (貫通星弾が1.5倍超巨大化)'],
+            youmu: ['🌸 習得：人魂「半分幻の庭師」 (半霊が自動追尾攻撃開始)', '🌸 強化：半霊「半分幻の庭師」 (半霊の追尾戦闘力2倍化)'],
+            sakuya: ['⏳ 習得：殺人ドール (画面跳弾ナイフが永続巡回)', '⏳ 強化：殺人ドール (跳弾ナイフの巡回数が2倍に増加)'],
+            reisen: ['👁️ 習得：幻朧月睨 (狂気波動による全周囲斥力)', '👁️ 強化：幻朧月睨 (錯乱波のダメージと衝撃力が極大化)'],
+            gojou: ['👁️‍🗨️ 習得：無下限呪術・常時展開 (自動防御シールド)', '👁️‍🗨️ 強化：無下限呪術 (シールド耐久値上限が2倍にアップ)'],
+            roxy: ['🧙‍♀️ 習得：魔術短縮詠唱 (基本連射速度が常時+25%)', '🧙‍♀️ 強化：魔術短縮詠唱 (弾幕発射数が追加で+1)'],
+            kato: ['👑 習得：天才配信者・うんこちゃん (移動速度が常時20%上昇)', '👑 強化：うんこちゃん・暴走 (移動速度+15%＆発射数+1)']
+        };
+        list.push({
+            name: pNames[player.type][personalSkillLevel],
+            effect: () => {
+                personalSkillLevel++;
+                if (player.type === 'reimu') {
+                    reimuBarrierMaxHp = personalSkillLevel === 1 ? 250 : 600;
+                    reimuBarrierHp = reimuBarrierMaxHp;
+                    reimuBarrierCooldown = 0;
+                }
+                if (player.type === 'sakuya') {
+                    let knifeCount = personalSkillLevel === 1 ? 4 : 8;
+                    sakuyaDollKnives = [];
+                    for(let i=0; i<knifeCount; i++) {
+                        let ang = (Math.PI * 2 / knifeCount) * i;
+                        sakuyaDollKnives.push({ x: player.x, y: player.y, vx: Math.cos(ang)*7, vy: Math.sin(ang)*7 });
+                    }
+                }
+                if (player.type === 'gojou') {
+                    gojouMugenMaxHp = personalSkillLevel === 1 ? 400 : 900;
+                    gojouMugenHp = gojouMugenMaxHp;
+                    gojouMugenCooldown = 0;
+                }
+                if (player.type === 'roxy') {
+                    if (personalSkillLevel === 1) player.attackSpeed += 0.4;
+                    if (personalSkillLevel === 2) player.multishot += 1;
+                }
+                if (player.type === 'kato') {
+                    if (personalSkillLevel === 1) player.speed *= 1.20;
+                    if (personalSkillLevel === 2) { player.speed *= 1.15; player.multishot += 1; }
+                }
+            }
+        });
+    }
+    return list.sort(() => 0.5 - Math.random()).slice(0, 3);
+}
+
 function startGame() {
-    initAudio();
     createSynthSE('click');
     document.getElementById('mainMenu').style.display = 'none';
     gameContainer.style.display = 'block';
-    
-    let baseHp = 100;
-    if (selectedCharType === 'gojou') baseHp = 150;
-    if (selectedCharType === 'kato') baseHp = 200;
-    
-    let baseAtk = 1;
-    if (selectedCharType === 'gojou') baseAtk = 1.5;
-    if (selectedCharType === 'kato') baseAtk = 2.2;
-    if (selectedCharType === 'roxy') baseAtk = 1.2;
+    document.getElementById('gacha-result').innerText = "";
+    playBgm('bgm_game.mp3');
 
-    player = {
-        x: 0, y: 0, r: 14,
-        hp: baseHp * (1 + saveData.upHp * 0.2), 
-        maxHp: baseHp * (1 + saveData.upHp * 0.2),
-        speed: selectedCharType === 'kato' ? 3.2 : 4,
-        damage: baseAtk * (1 + saveData.upAtk * 0.15),
-        shootCooldown: 0, type: selectedCharType, lastDirX: 1, lastDirY: 0
-    };
-    
-    bullets = []; enemies = []; gems = []; particles = []; sakuyaDollKnives = [];
-    score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0; spawnTimer = 0;
-    spellCooldown = 0; spellActiveTimer = 0; sakuyaTimeStopActive = false;
-    subWeapons = { garlic: 0, book: 0, thunder: 0 }; personalSkillLevel = 0; thunderTimer = 0;
+    if (window.innerHeight > window.innerWidth) { canvas.width = 580; canvas.height = 960; } 
+    else { canvas.width = 960; canvas.height = 580; }
+
+    player = { x: canvas.width/2, y: canvas.height/2, size: 32, shootCooldown: 0, multishot: 1, magnetRange: 140, type: selectedCharType, animTimer: 0, lastDirX: 1, isMoving: false };
+
+    if (selectedCharType === 'reimu') { player.maxHp = 100; player.damage = 16; player.speed = 4.3; player.attackSpeed = 1.4; }
+    else if (selectedCharType === 'marisa') { player.maxHp = 85; player.damage = 22; player.speed = 5.2; player.attackSpeed = 1.8; }
+    else if (selectedCharType === 'youmu') { player.maxHp = 120; player.damage = 18; player.speed = 4.6; player.attackSpeed = 1.5; }
+    else if (selectedCharType === 'sakuya') { player.maxHp = 95; player.damage = 15; player.speed = 4.8; player.attackSpeed = 2.2; } 
+    else if (selectedCharType === 'reisen') { player.maxHp = 110; player.damage = 20; player.speed = 4.2; player.attackSpeed = 1.3; }
+    else if (selectedCharType === 'gojou') { player.maxHp = 150; player.damage = 25; player.speed = 4.5; player.attackSpeed = 1.2; } 
+    else if (selectedCharType === 'roxy') { player.maxHp = 90; player.damage = 28; player.speed = 4.0; player.attackSpeed = 1.1; }  
+    else if (selectedCharType === 'kato') { player.maxHp = 140; player.damage = 30; player.speed = 4.4; player.attackSpeed = 1.2; }  
+
+    player.maxHp += (saveData.upHp * 25); player.damage += (saveData.upAtk * 4);
+    player.hp = player.maxHp; score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
+    bullets = []; enemies = []; gems = []; particles = []; spawnTimer = 0; spellCooldown = 0; spellActiveTimer = 0;
+    sakuyaTimeStopActive = false; subWeapons = { garlic: 0, book: 0, thunder: 0 }; personalSkillLevel = 0; thunderTimer = 0;
+    sakuyaDollKnives = []; youmuHalfGhost = { x: player.x, y: player.y, angle: 0, attackCooldown: 0 };
     reimuBarrierHp = 0; reimuBarrierMaxHp = 0; reimuBarrierCooldown = 0;
     gojouMugenHp = 0; gojouMugenMaxHp = 0; gojouMugenCooldown = 0;
     katoBatSwingAngle = 0;
-    
-    if (player.type === 'reimu') { reimuBarrierMaxHp = 30; reimuBarrierHp = 30; }
-    if (player.type === 'gojou') { gojouMugenMaxHp = 50; gojouMugenHp = 50; }
-    
-    youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
-    
-    gameActive = true;
-    playBgm('bgm.mp3');
-    updateLoop();
-}
 
-function spawnEnemy() {
-    let angle = Math.random() * Math.PI * 2;
-    let dist = 500;
-    let ex = player.x + Math.cos(angle) * dist;
-    let ey = player.y + Math.sin(angle) * dist;
-    
-    let typePool = ['normal'];
-    if (surviveTime > 30) typePool.push('fast');
-    if (surviveTime > 60) typePool.push('big');
-    if (surviveTime > 120) typePool.push('elite');
-    
-    let t = typePool[Math.floor(Math.random() * typePool.length)];
-    let ehp = 3 + level * 1.5, espd = 1.2 + Math.random() * 0.5, er = 12, ecol = '#ff4d4d', pts = 1;
-    
-    if (t === 'fast') { ehp = 2 + level; espd = 2.5; er = 10; ecol = '#ff9f43'; }
-    if (t === 'big') { ehp = 15 + level * 4; espd = 0.7; er = 22; ecol = '#ee5253'; pts = 3; }
-    if (t === 'elite') { ehp = 40 + level * 10; espd = 1.5; er = 18; ecol = '#00d2d3'; pts = 5; }
-    
-    enemies.push({ x: ex, y: ey, hp: ehp, maxHp: ehp, speed: espd, r: er, col: ecol, type: t, points: pts });
+    gameActive = true; 
+    updateLoop();
 }
 
 function updateLoop() {
     if (!gameActive) return;
+    surviveTime += 1 / 60; player.animTimer++;
     
-    surviveTime += 1/60;
-    if (spellCooldown > 0) spellCooldown--;
+    if (spellCooldown > 0) { spellCooldown--; bombBtn.disabled = true; bombCdText.innerText = `${Math.ceil(spellCooldown/60)}s`; } 
+    else { bombBtn.disabled = false; bombCdText.innerText = "READY"; }
     
-    // 画面タッチ・キーボード移動計算
-    let mx = 0, my = 0;
-    if (keys['w'] || keys['arrowup']) my = -1;
-    if (keys['s'] || keys['arrowdown']) my = 1;
-    if (keys['a'] || keys['arrowleft']) mx = -1;
-    if (keys['d'] || keys['arrowright']) mx = 1;
-    
-    if (isTouching) { mx = touchMoveVector.x; my = touchMoveVector.y; }
-    
-    if (mx !== 0 || my !== 0) {
-        let len = Math.hypot(mx, my);
-        player.x += (mx / len) * player.speed;
-        player.y += (my / len) * player.speed;
-        player.lastDirX = mx / len;
-        player.lastDirY = my / len;
+    if (spellActiveTimer > 0) { 
+        spellActiveTimer--; 
+        if (spellActiveTimer <= 0) sakuyaTimeStopActive = false; 
     }
-    
-    camera.x = player.x - canvas.width / 2;
-    camera.y = player.y - canvas.height / 2;
-    
-    // 固有パッシブ能力・カウンター減少
-    if (player.type === 'reimu' && reimuBarrierHp < reimuBarrierMaxHp) {
-        reimuBarrierCooldown++; if(reimuBarrierCooldown > 300){ reimuBarrierHp = reimuBarrierMaxHp; reimuBarrierCooldown = 0; }
+
+    if (player.type === 'reimu' && personalSkillLevel > 0 && reimuBarrierHp <= 0) {
+        reimuBarrierCooldown--;
+        if (reimuBarrierCooldown <= 0) { reimuBarrierHp = reimuBarrierMaxHp; createParticles(player.x, player.y, '#ff4757', 15); }
     }
-    if (player.type === 'gojou' && gojouMugenHp < gojouMugenMaxHp) {
-        gojouMugenCooldown++; if(gojouMugenCooldown > 240){ gojouMugenHp = gojouMugenMaxHp; gojouMugenCooldown = 0; }
+
+    if (player.type === 'gojou' && personalSkillLevel > 0 && gojouMugenHp <= 0) {
+        gojouMugenCooldown--;
+        if (gojouMugenCooldown <= 0) { gojouMugenHp = gojouMugenMaxHp; createParticles(player.x, player.y, '#74b9ff', 20); }
     }
+
+    let dx = 0, dy = 0;
+    if (keys['arrowup'] || keys['w']) dy -= 1;
+    if (keys['arrowdown'] || keys['s']) dy += 1;
+    if (keys['arrowleft'] || keys['a']) dx -= 1;
+    if (keys['arrowright'] || keys['d']) dx += 1;
+
+    if (isTouching && (touchMoveVector.x !== 0 || touchMoveVector.y !== 0)) { dx = touchMoveVector.x; dy = touchMoveVector.y; } 
+    else if (dx !== 0 && dy !== 0) { dx *= 0.7071; dy *= 0.7071; }
+
+    player.isMoving = (dx !== 0 || dy !== 0);
+    if (dx !== 0) player.lastDirX = dx;
     
-    // 半霊の移動ロジック
-    if (player.type === 'youmu') {
-        youmuHalfGhost.angle += 0.04;
-        youmuHalfGhost.x = player.x + Math.cos(youmuHalfGhost.angle) * 45;
-        youmuHalfGhost.y = player.y + Math.sin(youmuHalfGhost.angle) * 45;
-        if (youmuHalfGhost.attackCooldown > 0) youmuHalfGhost.attackCooldown--;
-        else {
-            let target = null, minDist = 200;
-            enemies.forEach(e => { let d = Math.hypot(e.x - youmuHalfGhost.x, e.y - youmuHalfGhost.y); if(d < minDist){ minDist = d; target = e; } });
-            if (target) {
-                let ang = Math.atan2(target.y - youmuHalfGhost.y, target.x - youmuHalfGhost.x);
-                bullets.push({ x: youmuHalfGhost.x, y: youmuHalfGhost.y, vx: Math.cos(ang)*7, vy: Math.sin(ang)*7, r:6, col:'#7bed9f', dmg: player.damage * 0.8, type:'ghost' });
-                youmuHalfGhost.attackCooldown = 25;
-            }
-        }
-    }
+    let currentSpeed = player.speed;
+    if (player.type === 'youmu' && spellActiveTimer > 0) currentSpeed *= 1.8;
     
-    // 咲夜の自動人形ナイフ
-    if (player.type === 'sakuya' && personalSkillLevel > 0) {
-        if(sakuyaDollKnives.length < personalSkillLevel) {
-            if(Math.random() < 0.02) sakuyaDollKnives.push({ angle: Math.random()*Math.PI*2, dist: 50 + Math.random()*30 });
-        }
-        sakuyaDollKnives.forEach(dk => dk.angle += 0.03);
-    }
-    
-    // サブウェポン自動発動
-    if (subWeapons.garlic > 0) {
+    player.x += dx * currentSpeed; player.y += dy * currentSpeed;
+    camera.x = player.x - canvas.width / 2; camera.y = player.y - canvas.height / 2;
+
+    if (player.type === 'reisen' && personalSkillLevel > 0 && !sakuyaTimeStopActive && player.animTimer % 100 === 0) {
+        let waveRadius = personalSkillLevel === 1 ? 160 : 250;
+        let waveDmg = personalSkillLevel === 1 ? player.damage : player.damage * 2;
         enemies.forEach(e => {
             let d = Math.hypot(e.x - player.x, e.y - player.y);
-            if (d < 45 + subWeapons.garlic * 15) { e.hp -= (player.damage * 0.015 * subWeapons.garlic); }
-        });
-    }
-    if (subWeapons.thunder > 0) {
-        thunderTimer++;
-        if (thunderTimer >= Math.max(20, 90 - subWeapons.thunder * 15)) {
-            thunderTimer = 0;
-            for (let i = 0; i < subWeapons.thunder; i++) {
-                if (enemies.length > 0) {
-                    let randE = enemies[Math.floor(Math.random() * enemies.length)];
-                    randE.hp -= player.damage * 2.5;
-                    createParticles(randE.x, randE.y, '#f1c40f', 8);
-                }
-            }
-        }
-    }
-    
-    // スペルカード有効タイマー減少
-    if (spellActiveTimer > 0) {
-        spellActiveTimer--;
-        if (player.type === 'marisa') {
-            let lx = player.x + (marisaLaserDirection * 480);
-            enemies.forEach(e => {
-                if (Math.abs(e.y - player.y) < 45 && ((marisaLaserDirection === 1 && e.x > player.x) || (marisaLaserDirection === -1 && e.x < player.x))) {
-                    e.hp -= player.damage * 0.3; createParticles(e.x, e.y, '#f1c40f', 1);
-                }
-            });
-        } else if (player.type === 'youmu') {
-            enemies.forEach(e => {
-                let d = Math.hypot(e.x - player.x, e.y - player.y);
-                if (d < 120) { e.hp -= player.damage * 0.2; }
-            });
-        } else if (player.type === 'sakuya' && spellActiveTimer === 0) {
-            sakuyaTimeStopActive = false;
-        } else if (player.type === 'gojou' && spellActiveTimer === 0) {
-            sakuyaTimeStopActive = false;
-        } else if (player.type === 'roxy') {
-            if (spellActiveTimer % 4 === 0) {
-                let rx = player.x + (Math.random() * 800 - 400);
-                let ry = player.y + (Math.random() * 600 - 300);
-                createParticles(rx, ry, '#3498db', 15);
-                enemies.forEach(e => {
-                    if (Math.hypot(e.x - rx, e.y - ry) < 130) { e.hp -= player.damage * 1.5; }
-                });
-            }
-        } else if (player.type === 'kato') {
-            // ぐるっと綺麗に1回転（2π分）するように、毎フレーム固定角度（2π / 60フレーム）進める
-            katoBatSwingAngle += (Math.PI * 2) / 60;
-            
-            let reach = 140; 
-            enemies.forEach(e => {
-                let d = Math.hypot(e.x - player.x, e.y - player.y);
-                if (d < reach) {
-                    let angE = Math.atan2(e.y - player.y, e.x - player.x);
-                    // 現在のスイング角度に近い敵をなぎ払う（前後約45度以内）
-                    let diff = Math.abs(angE - katoBatSwingAngle);
-                    diff = Math.min(diff, Math.PI * 2 - diff);
-                    if (diff < Math.PI / 4) {
-                        e.hp -= player.damage * 0.4;
-                        // 豪快に吹き飛ばす
-                        e.x += Math.cos(angE) * 6;
-                        e.y += Math.sin(angE) * 6;
-                        createParticles(e.x, e.y, '#ffaa00', 2);
-                    }
-                }
-            });
-        }
-    }
-    
-    // 通常攻撃の自動射出
-    if (player.shootCooldown > 0) player.shootCooldown--;
-    else {
-        createSynthSE('shoot');
-        if (player.type === 'reimu') {
-            bullets.push({ x: player.x, y: player.y, vx: player.lastDirX*6, vy: player.lastDirY*6, r:7, col:'#ff4757', dmg: player.damage, type:'reimu' });
-            player.shootCooldown = 22;
-        } else if (player.type === 'marisa') {
-            let num = 2 + personalSkillLevel;
-            for(let i=0; i<num; i++){
-                let a = Math.atan2(player.lastDirY, player.lastDirX) + (Math.random()*0.4 - 0.2);
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(a)*8, vy: Math.sin(a)*8, r:5, col:'#eccc68', dmg: player.damage*0.6, type:'marisa' });
-            }
-            player.shootCooldown = 18;
-        } else if (player.type === 'youmu') {
-            let a = Math.atan2(player.lastDirY, player.lastDirX);
-            bullets.push({ x: player.x, y: player.y, vx: Math.cos(a)*5, vy: Math.sin(a)*5, r:16, col:'rgba(255,255,255,0.4)', dmg: player.damage*1.4, type:'youmu', duration:15 });
-            player.shootCooldown = 35;
-        } else if (player.type === 'sakuya') {
-            let baseA = Math.atan2(player.lastDirY, player.lastDirX);
-            let spread = [0, -0.15, 0.15];
-            spread.forEach(sa => {
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(baseA+sa)*9, vy: Math.sin(baseA+sa)*9, r:4, col:'#74b9ff', dmg: player.damage * 0.7, type:'sakuya' });
-            });
-            player.shootCooldown = 20;
-        } else if (player.type === 'reisen') {
-            let a = Math.atan2(player.lastDirY, player.lastDirX);
-            bullets.push({ x: player.x, y: player.y, vx: Math.cos(a)*12, vy: Math.sin(a)*12, r:5, col:'#a55eea', dmg: player.damage * 1.1, type:'reisen', pierce:3 });
-            bullets.push({ x: player.x, y: player.y, vx: -Math.cos(a)*12, vy: -Math.sin(a)*12, r:5, col:'#a55eea', dmg: player.damage * 1.1, type:'reisen', pierce:3 });
-            player.shootCooldown = 26;
-        } else if (player.type === 'gojou') {
-            let target = null, minDist = 9999;
-            enemies.forEach(e => { let d = Math.hypot(e.x - player.x, e.y - player.y); if(d < minDist){ minDist = d; target = e; } });
-            let ax = player.lastDirX, ay = player.lastDirY;
-            if (target) { let d = Math.hypot(target.x - player.x, target.y - player.y); ax = (target.x - player.x)/d; ay = (target.y - player.y)/d; }
-            bullets.push({ x: player.x + ax*30, y: player.y + ay*30, vx:0, vy:0, r:35 + personalSkillLevel*5, col:'rgba(0,168,255,0.25)', dmg: player.damage*0.12, type:'gojou', duration:45 });
-            player.shootCooldown = 40;
-        } else if (player.type === 'roxy') {
-            let baseA = Math.atan2(player.lastDirY, player.lastDirX);
-            let count = 4 + personalSkillLevel;
-            for(let i=0; i<count; i++) {
-                let a = baseA + (Math.PI*2 / count) * i;
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(a)*4, vy: Math.sin(a)*4, r:7, col:'#54a0ff', dmg: player.damage * 0.9, type:'roxy' });
-            }
-            player.shootCooldown = 45;
-        } else if (player.type === 'kato') {
-            // 上下方向（垂直）に高火力の怒号弾を射出するように変更
-            bullets.push({ x: player.x, y: player.y, vx: 0, vy: -7, r: 10, col: '#ff9f43', dmg: player.damage * 2.2, type: 'kato' }); // 上
-            bullets.push({ x: player.x, y: player.y, vx: 0, vy: 7, r: 10, col: '#ff9f43', dmg: player.damage * 2.2, type: 'kato' });  // 下
-            player.shootCooldown = 28;
-        }
-    }
-    
-    // 弾丸の更新
-    bullets.forEach((b, idx) => {
-        if (!sakuyaTimeStopActive || b.type === 'gojou' || b.type === 'youmu') {
-            b.x += b.vx; b.y += b.vy;
-        }
-        
-        if (b.type === 'reimu' && enemies.length > 0) {
-            let target = enemies[0], minDist = Math.hypot(target.x - b.x, target.y - b.y);
-            enemies.forEach(e => { let d = Math.hypot(e.x - b.x, e.y - b.y); if(d < minDist){ minDist = d; target = e; } });
-            let dx = target.x - b.x, dy = target.y - b.y, dist = Math.hypot(dx, dy);
-            if (dist > 1) { b.vx = (b.vx + (dx/dist)*0.75); b.vy = (b.vy + (dy/dist)*0.75); let vlen = Math.hypot(b.vx, b.vy); b.vx = (b.vx/vlen)*6.5; b.vy = (b.vy/vlen)*6.5; }
-        }
-        
-        if (b.type === 'gojou' || b.type === 'youmu') {
-            b.duration--;
-            if(b.type === 'gojou') {
-                enemies.forEach(e => { if(Math.hypot(e.x - b.x, e.y - b.y) < b.r){ e.hp -= b.dmg; e.x += (b.x - e.x)*0.08; e.y += (b.y - e.y)*0.08; } });
-            }
-            if(b.duration <= 0) { bullets.splice(idx, 1); return; }
-        }
-        
-        if (Math.hypot(b.x - player.x, b.y - player.y) > 1000) { bullets.splice(idx, 1); return; }
-        
-        // 弾丸と敵の衝突判定
-        enemies.forEach((e, eIdx) => {
-            if (Math.hypot(e.x - b.x, e.y - b.y) < e.r + b.r && b.type !== 'gojou') {
-                e.hp -= b.dmg;
-                createSynthSE('hit');
-                createParticles(e.x, e.y, b.col, 3);
-                
-                if (b.type === 'roxy' && Math.random() < 0.4) { e.speed *= 0.5; } 
-                
-                if (b.pierce !== undefined) { b.pierce--; if(b.pierce <= 0) bullets.splice(idx, 1); } 
-                else if (b.type !== 'youmu') { bullets.splice(idx, 1); }
+            if (d < waveRadius) {
+                e.hp -= waveDmg;
+                let pushAng = Math.atan2(e.y - player.y, e.x - player.x);
+                e.x += Math.cos(pushAng) * 45; e.y += Math.sin(pushAng) * 45; 
+                createParticles(e.x, e.y, '#a55eea', 3); createSynthSE('hit');
             }
         });
-    });
-    
-    // 本（本の自動旋回サブウェポン）の判定
-    if (subWeapons.book > 0) {
-        let bCount = subWeapons.book * 2;
-        for (let i = 0; i < bCount; i++) {
-            let ang = (surviveTime * 2.2) + (Math.PI * 2 / bCount) * i;
-            let bx = player.x + Math.cos(ang) * 90;
-            let by = player.y + Math.sin(ang) * 90;
-            enemies.forEach(e => {
-                if (Math.hypot(e.x - bx, e.y - by) < e.r + 8) { e.hp -= player.damage * 0.04; createParticles(e.x, e.y, '#9b59b6', 1); }
-            });
-        }
     }
-    
-    // 咲夜の自動ナイフの敵判定
+
     if (player.type === 'sakuya' && personalSkillLevel > 0) {
-        sakuyaDollKnives.forEach(dk => {
-            let kx = player.x + Math.cos(dk.angle) * dk.dist;
-            let ky = player.y + Math.sin(dk.angle) * dk.dist;
+        sakuyaDollKnives.forEach(k => {
+            if (!sakuyaTimeStopActive) { k.x += k.vx; k.y += k.vy; }
+            if (Math.abs(k.x - player.x) > 460) k.vx *= -1;
+            if (Math.abs(k.y - player.y) > 280) k.vy *= -1;
             enemies.forEach(e => {
-                if(Math.hypot(e.x - kx, e.y - ky) < e.r + 6) { e.hp -= player.damage * 0.03; }
+                if (Math.hypot(e.x - k.x, e.y - k.y) < e.size * 0.6) {
+                    e.hp -= player.damage * 0.4; createParticles(e.x, e.y, '#74b9ff', 1);
+                    if (player.animTimer % 6 === 0) createSynthSE('hit');
+                }
             });
         });
     }
-    
-    // 敵スポーン
-    spawnTimer++;
-    let currentSpawnRate = Math.max(12, 45 - level * 2 - Math.floor(surviveTime/20)*4);
-    if (spawnTimer >= currentSpawnRate) { spawnTimer = 0; spawnEnemy(); }
-    
-    // 敵の移動とプレイヤー衝突判定
-    enemies.forEach((e, idx) => {
-        if (!sakuyaTimeStopActive) {
-            let dx = player.x - e.x, dy = player.y - e.y, dist = Math.hypot(dx, dy);
-            e.x += (dx / dist) * e.speed;
-            e.y += (dy / dist) * e.speed;
-        }
-        
-        // 死亡判定
-        if (e.hp <= 0) {
-            createParticles(e.x, e.y, e.col, 10);
-            if (Math.random() < 0.75) { gems.push({ x: e.x, y: e.y, pts: e.points }); }
-            else { goldEarned += e.points; score += e.points * 5; }
-            enemies.splice(idx, 1);
-            return;
-        }
-        
-        // プレイヤーとの接触ダメージ判定
-        if (Math.hypot(e.x - player.x, e.y - player.y) < e.r + player.r) {
-            if (player.type === 'youmu' && spellActiveTimer > 0) {
-                e.hp -= player.damage * 3; return; 
-            }
-            
-            let dmg = e.type === 'big' ? 25 : (e.type === 'elite' ? 40 : 12);
-            
-            if (player.type === 'reimu' && reimuBarrierHp > 0) {
-                reimuBarrierHp -= dmg; if(reimuBarrierHp < 0) reimuBarrierHp = 0;
-                e.x -= player.lastDirX * 40; e.y -= player.lastDirY * 40;
-                createSynthSE('damage');
-                return;
-            }
-            if (player.type === 'gojou' && gojouMugenHp > 0) {
-                gojouMugenHp -= dmg; if(gojouMugenHp < 0) gojouMugenHp = 0;
-                e.x -= player.lastDirX * 40; e.y -= player.lastDirY * 40;
-                createSynthSE('damage');
-                return;
-            }
-            
-            player.hp -= dmg;
-            createSynthSE('damage');
-            createParticles(player.x, player.y, '#ff4757', 12);
-            e.x -= player.lastDirX * 30; e.y -= player.lastDirY * 30;
-            
-            if (player.hp <= 0) { gameOver(); }
-        }
-    });
-    
-    // ジェムの吸引と獲得
-    gems.forEach((g, idx) => {
-        let dist = Math.hypot(g.x - player.x, g.y - player.y);
-        let magnetRange = selectedCharType === 'marisa' ? 140 : 85;
-        if (dist < magnetRange) {
-            let dx = player.x - g.x, dy = player.y - g.y;
-            g.x += (dx / dist) * 5.5;
-            g.y += (dy / dist) * 5.5;
-        }
-        if (dist < player.r + 8) {
-            createSynthSE('get');
-            exp += g.pts; score += g.pts * 10;
-            gems.splice(idx, 1);
-            
-            if (exp >= nextExp) {
-                level++; exp = 0; nextExp = Math.floor(nextExp * 1.5) + 4;
-                createSynthSE('levelup'); 
-                uiTitle.innerText = `能力開花 (Lv.${level})`; uiOptions.innerHTML = ""; 
-                const options = getUpgradeOptions();
-                options.forEach(upgrade => {
-                    const btn = document.createElement('button'); btn.className = 'btn'; btn.innerText = upgrade.name;
-                    btn.onclick = () => { createSynthSE('click'); upgrade.effect(); uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
-                    uiOptions.appendChild(btn);
-                });
-                uiLayer.style.display = 'flex';
-                gameActive = false;
-            }
-        }
-    });
-    
-    // パーティクルの更新
-    particles.forEach((p, idx) => {
-        p.x += p.vx; p.y += p.vy; p.life--; if (p.life <= 0) particles.splice(idx, 1);
-    });
-    
-    // 描画処理へ呼び出し
-    render();
-    
-    if (gameActive) {
-        requestAnimationFrame(updateLoop);
-    }
-}
 
-function getUpgradeOptions() {
-    let pool = [
-        { name: '⚔️ 攻撃力強化 (+15%)', effect: () => player.damage *= 1.15 },
-        { name: '❤️ 最大体力回復 & 上昇', effect: () => { player.maxHp += 20; player.hp = player.maxHp; } },
-        { name: '👟 移動速度向上 (+10%)', effect: () => player.speed *= 1.10 }
-    ];
-    
-    if(subWeapons.garlic < 5) pool.push({ name: `🧄 厄除けの生姜木 Lv.${subWeapons.garlic+1} (周囲持続ダメ)`, effect: () => subWeapons.garlic++ });
-    if(subWeapons.book < 5) pool.push({ name: `📖 魔導書使い魔 Lv.${subWeapons.book+1} (自動旋回攻撃)`, effect: () => subWeapons.book++ });
-    if(subWeapons.thunder < 5) pool.push({ name: `⚡ 落雷の天罰 Lv.${subWeapons.thunder+1} (ランダム単体雷撃)`, effect: () => subWeapons.thunder++ });
-    if(personalSkillLevel < 5) pool.push({ name: `🔮 キャラ固有スキル強化 Lv.${personalSkillLevel+1}`, effect: () => { personalSkillLevel++; if(player.type==='reimu') { reimuBarrierMaxHp+=15; reimuBarrierHp=reimuBarrierMaxHp; } if(player.type==='gojou'){ gojouMugenMaxHp+=25; gojouMugenHp=gojouMugenMaxHp; } } });
-    
-    let shuffle = pool.sort(() => 0.5 - Math.random());
-    return shuffle.slice(0, 3);
-}
+    if (player.type === 'youmu' && personalSkillLevel > 0) {
+        youmuHalfGhost.angle += 0.03;
+        let targetGx = player.x + Math.cos(youmuHalfGhost.angle) * 60;
+        let targetGy = player.y + Math.sin(youmuHalfGhost.angle) * 60;
+        youmuHalfGhost.x += (targetGx - youmuHalfGhost.x) * 0.1;
+        youmuHalfGhost.y += (targetGy - youmuHalfGhost.y) * 0.1;
 
-function createParticles(x, y, col, count) {
-    for (let i = 0; i < count; i++) {
-        let ang = Math.random() * Math.PI * 2;
-        let spd = Math.random() * 3 + 1;
-        particles.push({ x: x, y: y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd, life: Math.random()*20+15, col: col, r: Math.random()*3+1 });
+        if (enemies.length > 0 && !sakuyaTimeStopActive) {
+            youmuHalfGhost.attackCooldown--;
+            if (youmuHalfGhost.attackCooldown <= 0) {
+                youmuHalfGhost.attackCooldown = personalSkillLevel === 1 ? 25 : 12;
+                let nearest = enemies[0]; let nearD = Math.hypot(enemies[0].x - youmuHalfGhost.x, enemies[0].y - youmuHalfGhost.y);
+                enemies.forEach(e => { let d = Math.hypot(e.x - youmuHalfGhost.x, e.y - youmuHalfGhost.y); if (d < nearD) { nearD = d; nearest = e; } });
+                let ghostAng = Math.atan2(nearest.y - youmuHalfGhost.y, nearest.x - youmuHalfGhost.x);
+                bullets.push({ x: youmuHalfGhost.x, y: youmuHalfGhost.y, vx: Math.cos(ghostAng)*12, vy: Math.sin(ghostAng)*12, damage: player.damage * 0.6, type: 'ghost_wave', size: 18 });
+                createSynthSE('shoot');
+            }
+        }
     }
-}
 
-function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // グリッド背景
-    ctx.strokeStyle = '#161923'; ctx.lineWidth = 1;
-    let startX = Math.floor(camera.x / 40) * 40;
-    let startY = Math.floor(camera.y / 40) * 40;
-    for (let x = startX; x < startX + canvas.width + 40; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x - camera.x, 0); ctx.lineTo(x - camera.x, canvas.height); ctx.stroke();
+    if (subWeapons.garlic > 0 && !sakuyaTimeStopActive && player.animTimer % 10 === 0) {
+        let radius = 50 + subWeapons.garlic * 15; let dmg = 2 + subWeapons.garlic * 2;
+        let didHit = false;
+        enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < radius) { e.hp -= dmg; createParticles(e.x, e.y, '#2ed573', 1); didHit = true; } });
+        if (didHit) createSynthSE('hit');
     }
-    for (let y = startY; y < startY + canvas.height + 40; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y - camera.y); ctx.lineTo(canvas.width, y - camera.y); ctx.stroke();
-    }
-    
-    // サブウェポン: 生姜木の可視エフェクト
-    if (subWeapons.garlic > 0) {
-        ctx.fillStyle = 'rgba(46, 213, 115, 0.05)'; ctx.strokeStyle = 'rgba(46, 213, 115, 0.2)'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, 45 + subWeapons.garlic * 15, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-    }
-    // サブウェポン: 魔導書の描画
+
+    bullets = bullets.filter(b => b.type !== 'book' && b.type !== 'slash');
     if (subWeapons.book > 0) {
-        let bCount = subWeapons.book * 2;
-        ctx.fillStyle = '#9b59b6';
-        for (let i = 0; i < bCount; i++) {
-            let ang = (surviveTime * 2.2) + (Math.PI * 2 / bCount) * i;
-            ctx.beginPath(); ctx.arc(player.x + Math.cos(ang)*90 - camera.x, player.y + Math.sin(ang)*90 - camera.y, 7, 0, Math.PI*2); ctx.fill();
+        let count = subWeapons.book + 1; let radius = 90 + subWeapons.book * 10;
+        for (let i = 0; i < count; i++) {
+            let angle = (player.animTimer * 0.04) + (i * (Math.PI * 2 / count));
+            bullets.push({ x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius, vx: 0, vy: 0, damage: 4 + subWeapons.book * 3, type: 'book', size: 20 });
         }
     }
-    
-    // 咲夜の自動ナイフ描画
-    if (player.type === 'sakuya' && personalSkillLevel > 0) {
-        ctx.fillStyle = '#74b9ff';
-        sakuyaDollKnives.forEach(dk => {
-            ctx.beginPath(); ctx.arc(player.x + Math.cos(dk.angle)*dk.dist - camera.x, player.y + Math.sin(dk.angle)*dk.dist - camera.y, 5, 0, Math.PI*2); ctx.fill();
-        });
+
+    if (subWeapons.thunder > 0 && !sakuyaTimeStopActive) {
+        thunderTimer++; let interval = Math.max(20, 90 - subWeapons.thunder * 10);
+        if (thunderTimer >= interval && enemies.length > 0) {
+            thunderTimer = 0; let target = enemies[Math.floor(Math.random() * enemies.length)];
+            target.hp -= (25 + subWeapons.thunder * 15); createParticles(target.x, target.y, '#eccc68', 15);
+            createSynthSE('bomb');
+        }
     }
-    
-    // 半霊描画
+
     if (player.type === 'youmu') {
-        ctx.fillStyle = 'rgba(200, 255, 230, 0.65)';
-        ctx.beginPath(); ctx.arc(youmuHalfGhost.x - camera.x, youmuHalfGhost.y - camera.y, 9, 0, Math.PI*2); ctx.fill();
+        let slashSize = (spellActiveTimer > 0) ? 75 : 36; 
+        for (let i = 0; i < player.multishot; i++) {
+            let angle = (player.animTimer * 0.06) + (i * (Math.PI * 2 / player.multishot));
+            let radius = (spellActiveTimer > 0) ? 140 : 85;
+            bullets.push({ x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius, vx: 0, vy: 0, damage: player.damage * 0.75, type: 'slash', size: slashSize });
+        }
     }
+
+    // --- 加藤純一：ビヨンドマックスのパワフル薙ぎ払い処理 ---
+    if (player.type === 'kato' && spellActiveTimer > 0) {
+        let batLength = 340; 
+        let sweepSpeed = player.lastDirX > 0 ? 0.08 : -0.08; 
+        katoBatSwingAngle += sweepSpeed;
+
+        enemies.forEach(e => {
+            let enemyAngle = Math.atan2(e.y - player.y, e.x - player.x);
+            let dist = Math.hypot(e.x - player.x, e.y - player.y);
+            
+            let angleDiff = Math.abs(enemyAngle - katoBatSwingAngle);
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            angleDiff = Math.abs(angleDiff);
+
+            if (dist < batLength && angleDiff < 0.4) {
+                e.hp -= player.damage * 1.5; 
+                let pushDir = enemyAngle + (sweepSpeed * 2);
+                e.x += Math.cos(pushDir) * 22;
+                e.y += Math.sin(pushDir) * 22;
+                createParticles(e.x, e.y, '#ffff00', 3);
+                createParticles(e.x, e.y, '#ff4757', 2);
+                if (player.animTimer % 3 === 0) createSynthSE('hit');
+            }
+        });
+    }
+
+    if (player.shootCooldown <= 0 && enemies.length > 0) {
+        player.shootCooldown = 60 / player.attackSpeed;
+        let target = enemies[0]; let minDist = Math.hypot(enemies[0].x - player.x, enemies[0].y - player.y);
+        for (let i = 1; i < enemies.length; i++) { let d = Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y); if (d < minDist) { minDist = d; target = enemies[i]; } }
+        let baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
+        createSynthSE('shoot');
+
+        if (player.type === 'reimu') {
+            let baseDmgMultiplier = (personalSkillLevel > 0) ? 2.0 : 1.0; 
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = baseAngle + (i - (player.multishot-1)/2) * 0.25;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 11, vy: Math.sin(angle) * 11, damage: player.damage * baseDmgMultiplier, type: 'amulet', size: 16 });
+            }
+        } else if (player.type === 'marisa') {
+            let isPenetrate = (personalSkillLevel > 0); 
+            let starSize = (personalSkillLevel === 2) ? 30 : 18;
+            let moveAngle = player.lastDirX > 0 ? 0 : Math.PI;
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = moveAngle + (i - (player.multishot-1)/2) * 0.2;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 15, vy: Math.sin(angle) * 15, damage: player.damage * 0.85, type: 'star', size: starSize, penetrate: isPenetrate });
+            }
+        } else if (player.type === 'sakuya') {
+            let finalAngle = baseAngle;
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = finalAngle + (i - (player.multishot-1)/2) * 0.15;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 18, vy: Math.sin(angle) * 18, damage: player.damage * 0.9, type: 'knife', size: 14 });
+            }
+        } else if (player.type === 'reisen') {
+            for (let i = 0; i < player.multishot; i++) {
+                let offset = (i - (player.multishot-1)/2) * 12;
+                bullets.push({ x: player.x + offset, y: player.y, vx: player.lastDirX * 14, vy: 0, damage: player.damage * 1.1, type: '座薬', size: 20 });
+                bullets.push({ x: player.x - offset, y: player.y, vx: -player.lastDirX * 14, vy: 0, damage: player.damage * 0.7, type: '座薬', size: 20 });
+            }
+        } else if (player.type === 'gojou') {
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = baseAngle + (i - (player.multishot-1)/2) * 0.2;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 8, vy: Math.sin(angle) * 8, damage: player.damage, type: 'ao', size: 24 });
+            }
+        } else if (player.type === 'roxy') {
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = baseAngle + (i - (player.multishot-1)/2) * 0.25;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, damage: player.damage * 1.4, type: 'ice', size: 22 });
+            }
+        } else if (player.type === 'kato') {
+            let moveAngle = player.lastDirX > 0 ? 0 : Math.PI;
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = moveAngle + (i - (player.multishot-1)/2) * 0.15;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 13, vy: Math.sin(angle) * 13, damage: player.damage * 1.2, type: 'dogo', size: 26 });
+            }
+        }
+    } else { player.shootCooldown--; }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let b = bullets[i];
+        if (b.type === 'amulet' && enemies.length > 0) {
+            let t = enemies[0]; let mD = Math.hypot(enemies[0].x - b.x, enemies[0].y - b.y);
+            for (let j = 1; j < enemies.length; j++) { let d = Math.hypot(enemies[j].x - b.x, enemies[j].y - b.y); if (d < mD) { mD = d; t = enemies[j]; } }
+            let curAngle = Math.atan2(b.vy, b.vx); let targetAngle = Math.atan2(t.y - b.y, t.x - b.x); let diff = targetAngle - curAngle;
+            while (diff < -Math.PI) diff += Math.PI * 2; while (diff > Math.PI) diff -= Math.PI * 2;
+            curAngle += diff * 0.22; b.vx = Math.cos(curAngle) * 11; b.vy = Math.sin(curAngle) * 11;
+        }
+        
+        if (b.type === 'ao') {
+            enemies.forEach(e => {
+                if (Math.hypot(e.x - b.x, e.y - b.y) < 160) {
+                    let PullAng = Math.atan2(b.y - e.y, b.x - e.x);
+                    e.x += Math.cos(PullAng) * 3.5; e.y += Math.sin(PullAng) * 3.5;
+                }
+            });
+        }
+
+        b.x += b.vx; b.y += b.vy;
+        if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'ao' && Math.hypot(b.x - player.x, b.y - player.y) > 850) { bullets.splice(i, 1); }
+    }
+
+    if (!sakuyaTimeStopActive) {
+        spawnTimer++; const spawnRate = Math.max(4, 26 - Math.floor(surviveTime / 10)); 
+        if (spawnTimer % spawnRate === 0) {
+            const angle = Math.random() * Math.PI * 2;
+            let difficultyCurve = 1.0;
+            if (surviveTime > 90) difficultyCurve += (surviveTime - 90) * 0.02; 
+            if (surviveTime > 180) difficultyCurve += (surviveTime - 180) * 0.05; 
+
+            let size = 24, hp = (9 + (surviveTime * 1.5)) * difficultyCurve, speed = 2.4 + Math.random() * 0.6, isBoss = false, color = '#7f8c8d';
+            if (Math.random() < 0.05 + (surviveTime / 220) || spawnTimer % 1800 === 0) { 
+                isBoss = true; size = 55; hp = (250 + (surviveTime * 15)) * difficultyCurve; speed = 1.3; color = '#8e44ad'; 
+            } else if (surviveTime > 120 && Math.random() < 0.4) { 
+                size = 20; hp = (15 + (surviveTime * 1.5)) * difficultyCurve; speed = 4.2 * Math.min(1.5, difficultyCurve); color = '#a55eea'; 
+            } else if (surviveTime > 60 && Math.random() < 0.5) { 
+                size = 32; hp = (35 + (surviveTime * 3.0)) * difficultyCurve; speed = 1.8; color = '#fed330'; 
+            }
+            enemies.push({ x: player.x + Math.cos(angle) * 600, y: player.y + Math.sin(angle) * 600, size: size, hp: hp, maxHp: hp, speed: speed, isBoss: isBoss, color: color, damageMultiplier: difficultyCurve });
+        }
+    }
+
+    if (player.type === 'marisa' && spellActiveTimer > 0) {
+        let laserHeight = 110, laserWidth = 900;
+        let laserLeft = marisaLaserDirection > 0 ? player.x : player.x - laserWidth; let laserTop = player.y - laserHeight / 2;
+        enemies.forEach(enemy => {
+            if (enemy.x + enemy.size/2 > laserLeft && enemy.x - enemy.size/2 < laserLeft + laserWidth && enemy.y + enemy.size/2 > laserTop && enemy.y - enemy.size/2 < laserTop + laserHeight) {
+                enemy.hp -= player.damage * 0.8; createParticles(enemy.x, enemy.y, '#f1c40f', 1);
+                if (player.animTimer % 5 === 0) createSynthSE('hit');
+            }
+        });
+    }
+
+    for (let eIndex = enemies.length - 1; eIndex >= 0; eIndex--) {
+        const enemy = enemies[eIndex];
+        
+        if (player.type === 'reimu' && personalSkillLevel > 0 && reimuBarrierHp > 0) {
+            let barrierR = personalSkillLevel === 1 ? 80 : 130;
+            let barrierDist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (barrierDist < barrierR) {
+                let pushA = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                enemy.x = player.x + Math.cos(pushA) * barrierR; enemy.y = player.y + Math.sin(pushA) * barrierR;
+                let cost = enemy.isBoss ? 5.0 : 0.5; reimuBarrierHp -= cost;
+                if (reimuBarrierHp <= 0) {
+                    reimuBarrierHp = 0; reimuBarrierCooldown = personalSkillLevel === 1 ? 720 : 420;
+                    createParticles(player.x, player.y, '#fff', 20); createSynthSE('damage');
+                }
+            }
+        }
+
+        if (player.type === 'gojou' && personalSkillLevel > 0 && gojouMugenHp > 0) {
+            let barrierR = personalSkillLevel === 1 ? 70 : 110;
+            let barrierDist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (barrierDist < barrierR) {
+                let pushA = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                enemy.x = player.x + Math.cos(pushA) * barrierR; enemy.y = player.y + Math.sin(pushA) * barrierR;
+                let cost = enemy.isBoss ? 8.0 : 0.8; gojouMugenHp -= cost;
+                if (gojouMugenHp <= 0) {
+                    gojouMugenHp = 0; gojouMugenCooldown = personalSkillLevel === 1 ? 600 : 360;
+                    createParticles(player.x, player.y, '#74b9ff', 25); createSynthSE('damage');
+                }
+            }
+        }
+
+        if (!sakuyaTimeStopActive) {
+            const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (dist > 0) { enemy.x += ((player.x - enemy.x) / dist) * enemy.speed; enemy.y += ((player.y - enemy.y) / dist) * enemy.speed; }
+        }
+
+        const distToPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+        if (distToPlayer < (enemy.size * 0.45 + player.size * 0.4) && !sakuyaTimeStopActive) {
+            if (!(player.type === 'youmu' && spellActiveTimer > 0)) {
+                player.hp -= (enemy.isBoss ? 1.6 : 0.6) * enemy.damageMultiplier; createParticles(enemy.x, enemy.y, '#ff4d4d', 1);
+                if (player.animTimer % 15 === 0) createSynthSE('damage'); 
+                if (player.hp <= 0) { gameOver(); return; }
+            }
+        }
+
+        for (let bIndex = bullets.length - 1; bIndex >= 0; bIndex--) {
+            const b = bullets[bIndex];
+            if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < (enemy.size * 0.5 + b.size * 0.5)) {
+                
+                if (b.type === 'ice') {
+                    createParticles(b.x, b.y, '#54a0ff', 10);
+                    enemies.forEach(e => {
+                        if (Math.hypot(e.x - b.x, e.y - b.y) < 100) {
+                            e.hp -= b.damage * 0.6;
+                        }
+                    });
+                }
+
+                enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); createSynthSE('hit');
+                if (b.type !== 'slash' && b.type !== 'book' && b.type !== 'ao' && !b.penetrate) bullets.splice(bIndex, 1);
+            }
+        }
+
+        if (enemy.hp <= 0) {
+            enemies.splice(eIndex, 1); score += enemy.isBoss ? 500 : 40;
+            gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 15 : 1, type: 'exp' }); gems.push({ x: enemy.x, y: enemy.y, value: enemy.isBoss ? 25 : 4, type: 'gold' }); 
+        }
+    }
+
+    for (let gIndex = gems.length - 1; gIndex >= 0; gIndex--) {
+        const gem = gems[gIndex]; const dist = Math.hypot(player.x - gem.x, player.y - gem.y);
+        if (dist < player.magnetRange) { gem.x += ((player.x - gem.x) / dist) * 10; gem.y += ((player.y - gem.y) / dist) * 10; }
+        if (dist < 22) {
+            createSynthSE('get'); 
+            if (gem.type === 'exp') { exp += gem.value; if (exp >= nextExp) { levelUp(); gems.splice(gIndex, 1); return; } }
+            else if (gem.type === 'gold') goldEarned += gem.value;
+            gems.splice(gIndex, 1);
+        }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) { p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.05; if (p.alpha <= 0) particles.splice(i, 1); }
+    draw(); requestAnimationFrame(updateLoop);
+}
+
+function createParticles(x, y, color, count = 3) { for (let i = 0; i < count; i++) particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, color: color, alpha: 1 }); }
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let bgGridColor = sakuyaTimeStopActive ? '#2c3e50' : (surviveTime > 180 ? '#4a1525' : (surviveTime > 60 ? '#192a20' : '#141423'));
+    ctx.strokeStyle = bgGridColor; ctx.lineWidth = 1; const spacing = 64;
+    for (let x = Math.floor(camera.x / spacing) * spacing; x < camera.x + canvas.width + spacing; x += spacing) { ctx.beginPath(); ctx.moveTo(x - camera.x, 0); ctx.lineTo(x - camera.x, canvas.height); ctx.stroke(); }
+    for (let y = Math.floor(camera.y / spacing) * spacing; y < camera.y + canvas.height + spacing; y += spacing) { ctx.beginPath(); ctx.moveTo(0, y - camera.y); ctx.lineTo(canvas.width, y - camera.y); ctx.stroke(); }
+
+    if (player.type === 'reimu' && personalSkillLevel > 0 && reimuBarrierHp > 0) {
+        ctx.save(); let bRadius = personalSkillLevel === 1 ? 80 : 130;
+        let alpha = (reimuBarrierHp / reimuBarrierMaxHp) * 0.4 + 0.1;
+        ctx.strokeStyle = `rgba(255, 71, 87, ${alpha})`; ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
+        ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, bRadius, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = `rgba(255, 71, 87, ${alpha * 0.1})`; ctx.fill(); ctx.restore();
+    }
+
+    if (player.type === 'gojou' && personalSkillLevel > 0 && gojouMugenHp > 0) {
+        ctx.save(); let bRadius = personalSkillLevel === 1 ? 70 : 110;
+        let alpha = (gojouMugenHp / gojouMugenMaxHp) * 0.5 + 0.1;
+        ctx.strokeStyle = `rgba(116, 185, 255, ${alpha})`; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, bRadius, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = `rgba(116, 185, 255, ${alpha * 0.15})`; ctx.fill(); ctx.restore();
+    }
+
+    if (subWeapons.garlic > 0) {
+        ctx.save(); let radius = 50 + subWeapons.garlic * 15;
+        let grad = ctx.createRadialGradient(player.x - camera.x, player.y - camera.y, radius*0.5, player.x - camera.x, player.y - camera.y, radius);
+        grad.addColorStop(0, 'rgba(46, 213, 115, 0)'); grad.addColorStop(0.7, 'rgba(46, 213, 115, 0.15)'); grad.addColorStop(1, 'rgba(46, 213, 115, 0)');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, radius, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    }
+
+    if (player.type === 'reisen' && spellActiveTimer > 0) {
+        ctx.save(); ctx.strokeStyle = 'rgba(165, 94, 234, ' + (spellActiveTimer/45) + ')'; ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, 350 * (1 - spellActiveTimer/45), 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    }
+
+    gems.forEach(gem => { ctx.save(); ctx.translate(gem.x - camera.x, gem.y - camera.y); if (gem.type === 'exp') { ctx.fillStyle = '#2e86de'; ctx.fillRect(-5, -5, 10, 10); } else { ctx.fillStyle = '#ff3838'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill(); } ctx.restore(); });
     
-    // スペカ: レーザー (魔理沙)
-    if (spellActiveTimer > 0 && player.type === 'marisa') {
-        ctx.fillStyle = 'rgba(241, 196, 15, 0.4)'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
-        let lx = marisaLaserDirection === 1 ? player.x - camera.x : player.x - camera.x - 960;
-        ctx.fillRect(marisaLaserDirection === 1 ? player.x - camera.x : 0, player.y - camera.y - 40, 960, 80);
-        ctx.beginPath(); ctx.moveTo(marisaLaserDirection === 1 ? player.x - camera.x : 0, player.y - camera.y); ctx.lineTo(marisaLaserDirection === 1 ? canvas.width : 0, player.y - camera.y); ctx.stroke();
+    bullets.forEach(b => { 
+        ctx.save(); ctx.translate(b.x - camera.x, b.y - camera.y); 
+        if (b.type === 'amulet') { ctx.fillStyle = '#ff4d4d'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.fillRect(-4, -8, 8, 16); ctx.strokeRect(-4, -8, 8, 16); } 
+        else if (b.type === 'star') { ctx.fillStyle = '#f1c40f'; ctx.font = `bold ${b.size + 4}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('★', 0, 0); } 
+        else if (b.type === 'knife' || b.type === 'doll_knife') { ctx.fillStyle = '#dcdde1'; ctx.strokeStyle = '#7f8c8d'; ctx.lineWidth = 1; ctx.fillRect(-2, -7, 4, 14); ctx.strokeRect(-2, -7, 4, 14); }
+        else if (b.type === '座薬') { ctx.fillStyle = '#ff4757'; ctx.beginPath(); ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI*2); ctx.fill(); }
+        else if (b.type === 'book') { ctx.fillStyle = '#9b59b6'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.fillRect(-8, -10, 16, 20); ctx.fillStyle = '#fff'; ctx.fillRect(2, -10, 2, 20); }
+        else if (b.type === 'slash') { let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2); grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#2ed573'); grad.addColorStop(1, 'rgba(46,213,115,0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); }
+        else if (b.type === 'ghost_wave') { ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.strokeStyle = '#2ed573'; ctx.beginPath(); ctx.arc(0,0, b.size/2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
+        else if (b.type === 'ao') { 
+            let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
+            grad.addColorStop(0, '#fff'); grad.addColorStop(0.4, '#341f97'); grad.addColorStop(1, 'rgba(116,185,255,0)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
+        } else if (b.type === 'ice') {
+            let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
+            grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#54a0ff'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); // フリーズの原因（ctx.）を修正
+        } else if (b.type === 'dogo') {
+            let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
+            grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#ff9f43'); grad.addColorStop(1, 'rgba(255,71,87,0)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore(); 
+    });
+
+    if (player.type === 'sakuya' && personalSkillLevel > 0) {
+        sakuyaDollKnives.forEach(k => {
+            ctx.save(); ctx.translate(k.x - camera.x, k.y - camera.y);
+            ctx.fillStyle = '#74b9ff'; ctx.strokeStyle = '#fff'; ctx.fillRect(-3, -8, 6, 16); ctx.strokeRect(-3, -8, 6, 16); ctx.restore();
+        });
     }
-    // スペカ: 妖夢
-    if (spellActiveTimer > 0 && player.type === 'youmu') {
-        ctx.strokeStyle = 'rgba(46, 213, 115, 0.3)'; ctx.lineWidth = 4; ctx.beginPath();
-        ctx.arc(player.x - camera.x, player.y - camera.y, 120, 0, Math.PI*2); ctx.stroke();
+
+    if (player.type === 'marisa' && spellActiveTimer > 0) {
+        ctx.save(); let lHeight = 110 + Math.sin(player.animTimer * 0.4) * 15, lWidth = 960;
+        let lX = marisaLaserDirection > 0 ? player.x - camera.x : player.x - camera.x - lWidth; let lY = player.y - camera.y - lHeight / 2;
+        let grad = ctx.createLinearGradient(0, lY, 0, lY + lHeight); grad.addColorStop(0, 'rgba(255, 159, 67, 0)'); grad.addColorStop(0.2, '#ff9f43'); grad.addColorStop(0.5, '#fff'); grad.addColorStop(0.8, '#f1c40f'); grad.addColorStop(1, 'rgba(255, 159, 67, 0)');
+        ctx.fillStyle = grad; ctx.fillRect(lX, lY, lWidth, lHeight); ctx.fillStyle = '#ffffff'; ctx.fillRect(lX, lY + lHeight*0.35, lWidth, lHeight*0.3); ctx.restore();
     }
-    // スペカ: 五条悟（無量空処）背景
-    if (sakuyaTimeStopActive && player.type === 'gojou') {
-        ctx.fillStyle = 'rgba(116, 185, 255, 0.08)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 15px sans-serif'; ctx.fillText('領域展開「無量空処」展開中', 30, 115);
-    }
-    // スペカ: ロキシー（全体雷雨）
-    if (spellActiveTimer > 0 && player.type === 'roxy') {
-        ctx.fillStyle = 'rgba(52, 152, 219, 0.1)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    }
-    // スペカ: 加藤純一（ビヨンドマックス・フルスイング）
-    if (spellActiveTimer > 0 && player.type === 'kato') {
+
+    // --- 加藤純一：巨大バット描画 ---
+    if (player.type === 'kato' && spellActiveTimer > 0) {
         ctx.save();
         ctx.translate(player.x - camera.x, player.y - camera.y);
         ctx.rotate(katoBatSwingAngle);
         
-        // 斬撃・なぎ払い扇形エフェクト
-        let grad = ctx.createRadialGradient(0, 0, 30, 0, 0, 140);
-        grad.addColorStop(0, 'rgba(255, 170, 0, 0.6)');
-        grad.addColorStop(0.5, 'rgba(255, 71, 87, 0.4)');
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = grad;
-        
+        let bLen = 340;
+        let gradBat = ctx.createLinearGradient(0, -12, bLen, 12);
+        gradBat.addColorStop(0, '#2f3542');
+        gradBat.addColorStop(0.2, '#747d8c');
+        gradBat.addColorStop(0.5, '#ffaa00');  
+        gradBat.addColorStop(0.8, '#ff4757');  
+        gradBat.addColorStop(1, 'rgba(255,255,255,0)');
+
+        ctx.fillStyle = gradBat;
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        // 現在のスイング方向から少し後ろに広がるような綺麗な軌跡を描画
-        ctx.arc(0, 0, 140, 0, -Math.PI / 2, true);
+        ctx.moveTo(0, -6);
+        ctx.lineTo(bLen * 0.3, -8);
+        ctx.lineTo(bLen, -25); 
+        ctx.lineTo(bLen, 25);
+        ctx.lineTo(bLen * 0.3, 8);
+        ctx.lineTo(0, 6);
         ctx.closePath();
         ctx.fill();
-        
-        // バット本体の描画
-        ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
-        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(135, 0); ctx.stroke();
-        ctx.fillStyle = '#ff4757'; ctx.beginPath(); ctx.arc(135, 0, 6, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = 'rgba(255, 170, 0, 0.15)';
+        ctx.beginPath();
+        ctx.arc(0, 0, bLen, -0.4, 0.4);
+        ctx.lineTo(0, 0);
+        ctx.fill();
         ctx.restore();
     }
     
-    // ジェム描画
-    gems.forEach(g => {
-        ctx.fillStyle = g.pts === 3 ? '#ee5253' : (g.pts === 5 ? '#00d2d3' : '#54a0ff');
-        ctx.beginPath(); ctx.arc(g.x - camera.x, g.y - camera.y, 5, 0, Math.PI*2); ctx.fill();
+    enemies.forEach(enemy => { 
+        ctx.save(); ctx.translate(enemy.x - camera.x, enemy.y - camera.y); 
+        ctx.fillStyle = sakuyaTimeStopActive ? '#555' : enemy.color; ctx.beginPath(); ctx.arc(0, 0, enemy.size/2, 0, Math.PI*2); ctx.fill(); 
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.arc(enemy.size*0.15, -1, 3, 0, Math.PI*2); ctx.fill(); ctx.restore(); 
     });
+
+    if (player.type === 'youmu' && personalSkillLevel > 0) {
+        ctx.save(); ctx.translate(youmuHalfGhost.x - camera.x, youmuHalfGhost.y - camera.y);
+        ctx.fillStyle = 'rgba(245, 246, 250, 0.85)'; ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
+        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    }
+
+    ctx.save(); ctx.translate(player.x - camera.x, player.y - camera.y); if (player.lastDirX < 0) ctx.scale(-1, 1);
+    const bob = Math.sin(player.animTimer * 0.12) * 2;
+    if (player.type === 'youmu' && spellActiveTimer > 0) ctx.globalAlpha = 0.6 + Math.sin(player.animTimer*0.5)*0.3;
     
-    // 敵描画
-    enemies.forEach(e => {
-        ctx.fillStyle = e.col;
-        ctx.beginPath(); ctx.arc(e.x - camera.x, e.y - camera.y, e.r, 0, Math.PI*2); ctx.fill();
-        
-        // ボス/エリート用HPバー
-        if (e.type === 'big' || e.type === 'elite') {
-            ctx.fillStyle = '#333'; ctx.fillRect(e.x - e.r - camera.x, e.y - e.r - 12 - camera.y, e.r*2, 4);
-            ctx.fillStyle = '#ff4d4d'; ctx.fillRect(e.x - e.r - camera.x, e.y - e.r - 12 - camera.y, (e.r*2) * (e.hp/e.maxHp), 4);
-        }
+    if (imageLoaded[player.type]) { 
+        ctx.imageSmoothingEnabled = false; 
+        ctx.drawImage(charImages[player.type], -player.size/2, -player.size/2 + bob, player.size, player.size); 
+    } else { 
+        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea', gojou: '#ffffff', roxy: '#54a0ff', kato: '#ffaa00' };
+        ctx.fillStyle = colors[player.type]; ctx.beginPath(); ctx.arc(0, bob, player.size/2, 0, Math.PI*2); ctx.fill(); 
+    }
+    ctx.restore(); ctx.globalAlpha = 1.0;
+    
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fillRect(p.x - camera.x, p.y - camera.y, 4, 4); ctx.globalAlpha = 1.0; });
+
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(20, 20, canvas.width - 40, 10, 5); ctx.fill();
+    ctx.fillStyle = '#2e86de'; ctx.beginPath(); ctx.roundRect(20, 20, (canvas.width - 40) * Math.min(1, exp / nextExp), 10, 5); ctx.fill();
+    
+    ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff';
+    ctx.fillText(`Lv. ${level}`, 20, 55); ctx.fillText(`SCORE: ${score}`, 20, 77); ctx.fillStyle = '#ffcc00'; ctx.fillText(`POINT: ${goldEarned}`, 20, 99); ctx.fillStyle = '#a4b0be'; const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0'); ctx.fillText(`TIME: ${min}:${sec}`, 20, 121);
+    
+    let swText = "SKILL: ";
+    if (subWeapons.garlic > 0) swText += `🧄Lv.${subWeapons.garlic} `;
+    if (subWeapons.book > 0) swText += `📖Lv.${subWeapons.book} `;
+    if (subWeapons.thunder > 0) swText += `⚡Lv.${subWeapons.thunder} `;
+    if (personalSkillLevel > 0) swText += `⭐固有Lv.${personalSkillLevel} `;
+    if (player.type === 'reimu' && personalSkillLevel > 0) {
+        if (reimuBarrierHp > 0) swText += `🛡️結界:${Math.ceil(reimuBarrierHp)} `;
+        else swText += `⏳結界再生中:${Math.ceil(reimuBarrierCooldown/60)}s `;
+    }
+    if (player.type === 'gojou' && personalSkillLevel > 0) {
+        if (gojouMugenHp > 0) swText += `🛡️無下限:${Math.ceil(gojouMugenHp)} `;
+        else swText += `⏳無下限再生中:${Math.ceil(gojouMugenCooldown/60)}s `;
+    }
+    ctx.fillStyle = '#2ed573'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(swText, 20, 142);
+
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(20, canvas.height - 35, 220, 16, 8); ctx.fill();
+    ctx.fillStyle = '#ff4757'; ctx.beginPath(); ctx.roundRect(20, canvas.height - 35, 220 * Math.max(0, player.hp / player.maxHp), 16, 8); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.fillText(`LIFE: ${Math.ceil(player.hp)}/${player.maxHp}`, 32, canvas.height - 23);
+}
+
+function levelUp() {
+    gameActive = false; level++; exp -= nextExp; nextExp = Math.floor(nextExp * 1.5) + 4;
+    createSynthSE('levelup'); 
+    uiTitle.innerText = `能力開花 (Lv.${level})`; uiOptions.innerHTML = ""; 
+    const options = getUpgradeOptions();
+    options.forEach(upgrade => {
+        const btn = document.createElement('button'); btn.className = 'btn'; btn.innerText = upgrade.name;
+        btn.onclick = () => { createSynthSE('click'); upgrade.effect(); uiLayer.style.display = 'none'; gameActive = true; updateLoop(); };
+        uiOptions.appendChild(btn);
     });
-    
-    // 弾丸描画
-    bullets.forEach(b => {
-        ctx.fillStyle = b.col;
-        ctx.beginPath(); ctx.arc(b.x - camera.x, b.y - camera.y, b.r, 0, Math.PI*2); ctx.fill();
-    });
-    
-    // パーティクル描画
-    particles.forEach(p => {
-        ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x - camera.x, p.y - camera.y, p.r, 0, Math.PI*2); ctx.fill();
-    });
-    
-    // プレイヤー描画
-    if (imageLoaded[player.type]) {
-        ctx.drawImage(charImages[player.type], player.x - 22 - camera.x, player.y - 22 - camera.y, 44, 44);
-    } else {
-        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, player.r, 0, Math.PI*2); ctx.fill();
-    }
-    
-    // 霊夢結界/五条無下限バリア 可視化
-    if (player.type === 'reimu' && reimuBarrierHp > 0) {
-        ctx.strokeStyle = 'rgba(255, 71, 87, 0.4)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, player.r + 10, 0, Math.PI*2); ctx.stroke();
-    }
-    if (player.type === 'gojou' && gojouMugenHp > 0) {
-        ctx.strokeStyle = 'rgba(0, 161, 255, 0.5)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x - camera.x, player.y - camera.y, player.r + 12, 0, Math.PI*2); ctx.stroke();
-    }
-    
-    // --- HUD UIオーバーレイ描画 ---
-    // HPバー
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(20, 20, 200, 16);
-    let hpPercent = Math.max(0, player.hp / player.maxHp);
-    ctx.fillStyle = '#2ed573'; ctx.fillRect(20, 20, 200 * hpPercent, 16);
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.strokeRect(20, 20, 200, 16);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.fillText(`❤️ HP: ${Math.floor(player.hp)}/${Math.floor(player.maxHp)}`, 28, 32);
-    
-    // バリア耐久表示
-    if (player.type === 'reimu' && reimuBarrierHp > 0) {
-        ctx.fillStyle = '#ff4757'; ctx.font = '10px sans-serif'; ctx.fillText(`☯️ 御守結界: ${Math.floor(reimuBarrierHp)}`, 25, 50);
-    }
-    if (player.type === 'gojou' && gojouMugenHp > 0) {
-        ctx.fillStyle = '#00a8ff'; ctx.font = '10px sans-serif'; ctx.fillText(`👁️ 無下限内得: ${Math.floor(gojouMugenHp)}`, 25, 50);
-    }
-    
-    // 経験値バー
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(20, canvas.height - 30, canvas.width - 40, 10);
-    let expPercent = Math.min(1, exp / nextExp);
-    ctx.fillStyle = '#9b59b6'; ctx.fillRect(20, canvas.height - 30, (canvas.width - 40) * expPercent, 10);
-    ctx.strokeRect(20, canvas.height - 30, canvas.width - 40, 10);
-    
-    // 各種ゲームステータス情報テキスト
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px sans-serif';
-    ctx.fillText(`Lv.${level}`, 25, canvas.height - 38);
-    ctx.fillText(`解決POINT: ${goldEarned} 🔴`, 240, 32);
-    
-    let min = Math.floor(surviveTime / 60); let sec = Math.floor(surviveTime % 60).toString().padStart(2, '0');
-    ctx.font = 'bold 16px monospace'; ctx.fillText(`${min}:${sec}`, canvas.width / 2 - 20, 33);
-    
-    // スペカクールダウン表示制御
-    if (spellCooldown > 0) {
-        bombBtn.disabled = true; bombCdText.innerText = Math.ceil(spellCooldown / 60) + "s";
-    } else {
-        bombBtn.disabled = false; bombCdText.innerText = "READY";
-    }
+    uiLayer.style.display = 'flex';
 }
 
 function gameOver() {
     gameActive = false; uiTitle.innerText = "満身創痍"; saveData.gold += goldEarned; saveGame();
     createSynthSE('gameover'); 
     const min = Math.floor(surviveTime / 60); const sec = Math.floor(surviveTime % 60).toString().padStart(2, '0');
-    uiOptions.innerHTML = `<p style=\"margin:5px 0; font-size:16px;\">リザルト</p><p style=\"margin:5px 0; font-size:14px;\">防衛時間: ${min}分${sec}秒</p><p style=\"margin:5px 0; font-size:14px;\">回収POINT: <span class=\"p-text\">+${goldEarned}</span> 🔴</p>`;
+    uiOptions.innerHTML = `<p style="margin:5px 0; font-size:16px;">リザルト</p><p style="margin:5px 0; font-size:14px;">防衛時間: ${min}分${sec}秒</p><p style="margin:5px 0; font-size:14px;">回収POINT: <span class="p-text">+${goldEarned}</span> 🔴</p>`;
     const menuBtn = document.createElement('button'); menuBtn.className = 'btn'; menuBtn.innerText = '里へ戻る';
     menuBtn.onclick = () => { 
         createSynthSE('click');
-        uiLayer.style.display = 'none'; gameContainer.style.display = 'none';
-        document.getElementById('mainMenu').style.display = 'block';
-        loadGame();
+        uiLayer.style.display = 'none'; gameContainer.style.display = 'none'; document.getElementById('mainMenu').style.display = 'block'; 
+        stopBgm();
+        updateMenuUI(); 
     };
-    uiOptions.appendChild(menuBtn);
-    uiLayer.style.display = 'flex';
+    uiOptions.appendChild(menuBtn); uiLayer.style.display = 'flex';
 }
 
-window.onload = loadGame;
+loadGame();
 </script>
 </body>
 </html>
