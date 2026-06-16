@@ -183,6 +183,20 @@
         }
         .volume-val { width: 35px; text-align: right; color: #ffcc00; font-weight: bold; }
 
+        .menu-window {
+            background: rgba(15, 15, 25, 0.96);
+            border: 3px solid #ff4757;
+            padding: 20px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 800px;
+            width: 95%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            z-index: 20;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
         .menu-section {
             background: #11121a;
             border: 2px solid #2f3542;
@@ -307,7 +321,7 @@
                 <div class="card locked" id="char-kato" onclick="selectChar('kato')">
                     <span class="lock-badge" id="badge-kato">🔒 未解放</span>
                     <h4 style="color:#ffaa00; text-shadow:0 0 5px #ff4757; margin:2px 0;">加藤 純一</h4>
-                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">怒号弾(高火力) / 💥ビヨンドマックス・フルスイング(超剛力薙ぎ払い＆豪快吹っ飛び)</p>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">縦方向怒号弾(高火力) / 💥ビヨンドマックス・フルスイング(超剛力一回転半薙ぎ払い＆豪快吹っ飛び)</p>
                 </div>
             </div>
             <button class="btn" style="background:#74b9ff; color:#000; border:none; width:100%; margin-top:10px;" onclick="toggleCharModal(false)">決定して戻る</button>
@@ -370,7 +384,7 @@ charImages.sakuya.src = 'sakuya.png';
 charImages.reisen.src = 'reisen.png';
 charImages.gojou.src = 'gojou.png'; 
 charImages.roxy.src = 'roxy.png';   
-charImages.kato.src = 'jun.png';   // 画像アセットの割り当て
+charImages.kato.src = 'jun.png';
 
 let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false, roxy: false, kato: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
@@ -400,7 +414,7 @@ function initAudio() {
         bgmGainNode.connect(audioCtx.destination);
 
         katoVoiceElement = new Audio();
-        katoVoiceElement.src = 'jun.mp3'; // ご指定の音声ファイルを適用
+        katoVoiceElement.src = 'jun.mp3';
         katoVoiceElement.crossOrigin = "anonymous";
         const katoSource = audioCtx.createMediaElementSource(katoVoiceElement);
         const katoGain = audioCtx.createGain();
@@ -698,6 +712,7 @@ function activateSpellCard() {
         }
         createSynthSE('bomb');
         spellActiveTimer = 60; 
+        // 豪快に1回転半（3π分）スイングさせるための初期角度設定
         katoBatSwingAngle = player.lastDirX > 0 ? -Math.PI * 0.6 : Math.PI * 1.6; 
     } else {
         createSynthSE('bomb'); 
@@ -999,10 +1014,11 @@ function updateLoop() {
         }
     }
 
-    // --- 加藤純一：ビヨンドマックスのパワフル薙ぎ払い処理 ---
+    // --- 加藤純一：ビヨンドマックスの一回転半（540度）パワフル大回転処理 ---
     if (player.type === 'kato' && spellActiveTimer > 0) {
         let batLength = 340; 
-        let sweepSpeed = player.lastDirX > 0 ? 0.08 : -0.08; 
+        // 1回転半（約4.71ラジアン）を60フレームの持続時間で回し切るための高速回転速度（約0.22）
+        let sweepSpeed = player.lastDirX > 0 ? 0.22 : -0.22; 
         katoBatSwingAngle += sweepSpeed;
 
         enemies.forEach(e => {
@@ -1013,11 +1029,11 @@ function updateLoop() {
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             angleDiff = Math.abs(angleDiff);
 
-            if (dist < batLength && angleDiff < 0.4) {
+            if (dist < batLength && angleDiff < 0.5) {
                 e.hp -= player.damage * 1.5; 
-                let pushDir = enemyAngle + (sweepSpeed * 2);
-                e.x += Math.cos(pushDir) * 22;
-                e.y += Math.sin(pushDir) * 22;
+                let pushDir = enemyAngle + (sweepSpeed * 1.5);
+                e.x += Math.cos(pushDir) * 25;
+                e.y += Math.sin(pushDir) * 25;
                 createParticles(e.x, e.y, '#ffff00', 3);
                 createParticles(e.x, e.y, '#ff4757', 2);
                 if (player.animTimer % 3 === 0) createSynthSE('hit');
@@ -1069,10 +1085,13 @@ function updateLoop() {
                 bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, damage: player.damage * 1.4, type: 'ice', size: 22 });
             }
         } else if (player.type === 'kato') {
-            let moveAngle = player.lastDirX > 0 ? 0 : Math.PI;
+            // 魔理沙と被らないよう、縦方向（上：-Math.PI/2, 下：Math.PI/2）へ撃ち出すように変更
             for (let i = 0; i < player.multishot; i++) {
-                let angle = moveAngle + (i - (player.multishot-1)/2) * 0.15;
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 13, vy: Math.sin(angle) * 13, damage: player.damage * 1.2, type: 'dogo', size: 26 });
+                let offsetAngle = (i - (player.multishot-1)/2) * 0.18;
+                // 上方向へのショット
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(-Math.PI/2 + offsetAngle) * 13, vy: Math.sin(-Math.PI/2 + offsetAngle) * 13, damage: player.damage * 1.2, type: 'dogo', size: 26 });
+                // 下方向へのショット
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(Math.PI/2 + offsetAngle) * 13, vy: Math.sin(Math.PI/2 + offsetAngle) * 13, damage: player.damage * 1.2, type: 'dogo', size: 26 });
             }
         }
     } else { player.shootCooldown--; }
@@ -1270,7 +1289,7 @@ function draw() {
         } else if (b.type === 'ice') {
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#54a0ff'); grad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); // フリーズの原因（ctx.）を修正
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); 
         } else if (b.type === 'dogo') {
             let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2);
             grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#ff9f43'); grad.addColorStop(1, 'rgba(255,71,87,0)');
@@ -1293,7 +1312,7 @@ function draw() {
         ctx.fillStyle = grad; ctx.fillRect(lX, lY, lWidth, lHeight); ctx.fillStyle = '#ffffff'; ctx.fillRect(lX, lY + lHeight*0.35, lWidth, lHeight*0.3); ctx.restore();
     }
 
-    // --- 加藤純一：巨大バット描画 ---
+    // --- 加藤純一：巨大バット描画（一回転半・540度大回転ビジュアル） ---
     if (player.type === 'kato' && spellActiveTimer > 0) {
         ctx.save();
         ctx.translate(player.x - camera.x, player.y - camera.y);
@@ -1318,9 +1337,10 @@ function draw() {
         ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = 'rgba(255, 170, 0, 0.15)';
+        // 斬撃・スイングの軌跡エフェクト
+        ctx.fillStyle = 'rgba(255, 170, 0, 0.2)';
         ctx.beginPath();
-        ctx.arc(0, 0, bLen, -0.4, 0.4);
+        ctx.arc(0, 0, bLen, -0.6, 0.6);
         ctx.lineTo(0, 0);
         ctx.fill();
         ctx.restore();
