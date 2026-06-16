@@ -208,13 +208,16 @@
 </head>
 <body>
 
+    <!-- メインメニュー -->
     <div id="mainMenu" class="menu-window">
         <h1 style="color:#ff4757; margin: 0; font-size: 24px; letter-spacing: 1px;">☯️ 東方生存郷 ☯️</h1>
         <p style="font-size: 13px; color: #a4b0be; margin: 2px 0 10px 0; font-style: italic;">~ Border of Survivors</p>
         <p style="margin: 5px 0; font-size: 16px;">所持POINT: <span id="menuGold" class="p-text">0</span> 🔴</p>
         
+        <!-- 📦 ここから2×2グリッドレイアウト -->
         <div class="menu-layout">
             
+            <!-- ① ガチャ -->
             <div class="menu-section" style="border-color: #ffcc00; background: rgba(255,204,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h4 class="section-title">⛩️ 博麗神社 賽銭箱ガチャ</h4>
@@ -226,6 +229,7 @@
                 </div>
             </div>
 
+            <!-- ② キャラクター選択 -->
             <div class="menu-section" style="display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h4 class="section-title" style="color: #74b9ff;">👥 出撃キャラクター</h4>
@@ -240,6 +244,7 @@
                 </div>
             </div>
 
+            <!-- ③ 能力解放 -->
             <div class="menu-section">
                 <h4 class="section-title" style="color: #2ed573;">🔮 能力解放（永続強化）</h4>
                 <div style="font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
@@ -254,6 +259,7 @@
                 </div>
             </div>
 
+            <!-- ④ 音量設定 -->
             <div class="menu-section" style="display: flex; flex-direction: column; justify-content: center;">
                 <h4 class="section-title" style="color: #a4b0be; margin-bottom: 12px;">⚙️ 音量設定</h4>
                 <div class="volume-container" style="border: none; padding: 0;">
@@ -271,9 +277,12 @@
             </div>
 
         </div>
+        <!-- 📦 レイアウトここまで -->
+
         <button class="btn" style="font-size:18px; margin-top:20px; width:100%; background:#ff4757; color:#fff; box-shadow: 0 4px 15px rgba(255,71,87,0.3);" onclick="startGame()">異変解決へ向かう</button>
     </div>
 
+    <!-- キャラクター一覧モーダル画面 -->
     <div id="charModal" class="modal-layer">
         <div class="menu-window" style="border-color: #74b9ff; max-width: 420px;">
             <h3 style="color:#74b9ff; margin-top:0;">⛩️ 参戦キャラクター一覧</h3>
@@ -303,11 +312,18 @@
                     <h4 style="color:#a55eea; margin:2px 0;">鈴仙・優曇華院 <span id="rank-reisen" class="rank-badge"></span></h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">前後貫通レーザー / 💥赤眼催眠(周囲超爆発)</p>
                 </div>
+                <!-- 🤞 新規追加キャラ: 五条悟 -->
+                <div class="card locked" id="char-gojou" onclick="selectChar('gojou')">
+                    <span class="lock-badge" id="badge-gojou">🔒 未解放</span>
+                    <h4 style="color:#ffffff; text-shadow: 0 0 5px #74b9ff; margin:2px 0;">五条 悟 <span id="rank-gojou" class="rank-badge"></span></h4>
+                    <p style="font-size:11px; color:#a4b0be; margin:2px 0;">術式「蒼」「赫」 / 💥虚式「茈」(超極太消滅レーザー)</p>
+                </div>
             </div>
             <button class="btn" style="background:#74b9ff; color:#000; border:none; width:100%; margin-top:10px;" onclick="toggleCharModal(false)">決定して戻る</button>
         </div>
     </div>
 
+    <!-- ゲームプレイ画面 -->
     <div id="gameContainer" class="canvas-container">
         <canvas id="gameCanvas" width="960" height="580"></canvas>
         <div id="touch-overlay"></div>
@@ -315,6 +331,7 @@
         <button id="bomb-btn" onclick="activateSpellCard()"><div>スペカ</div><div id="bomb-cooldown" style="font-size:10px;">READY</div></button>
     </div>
     
+    <!-- ポーズ/レベルアップ用UI -->
     <div id="ui-layer">
         <h2 id="ui-title" style="color:#ff4757; margin-top:0; font-size: 20px;">能力開花</h2>
         <div id="ui-options" style="display:flex; flex-direction:column; width:100%;"></div>
@@ -336,20 +353,20 @@ const bombBtn = document.getElementById('bomb-btn');
 const bombCdText = document.getElementById('bomb-cooldown');
 const charModal = document.getElementById('charModal');
 
-const charNamesJp = { reimu: '博麗 霊夢', marisa: '霧雨 魔理沙', youmu: '魂魄 妖夢', sakuya: '十六夜 咲夜', reisen: '鈴仙・優曇華院' };
+const charNamesJp = { reimu: '博麗 霊夢', marisa: '霧雨 魔理沙', youmu: '魂魄 妖夢', sakuya: '十六夜 咲夜', reisen: '鈴仙・優曇華院', gojou: '五条 悟' };
 
-const charImages = { reimu: new Image(), marisa: new Image(), youmu: new Image(), sakuya: new Image(), reisen: new Image() };
-charImages.reimu.src = 'reimu.png'; charImages.marisa.src = 'marisa.png'; charImages.youmu.src = 'youmu.png'; charImages.sakuya.src = 'sakuya.png'; charImages.reisen.src = 'reisen.png';
-let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false };
+const charImages = { reimu: new Image(), marisa: new Image(), youmu: new Image(), sakuya: new Image(), reisen: new Image(), gojou: new Image() };
+charImages.reimu.src = 'reimu.png'; charImages.marisa.src = 'marisa.png'; charImages.youmu.src = 'youmu.png'; charImages.sakuya.src = 'sakuya.png'; charImages.reisen.src = 'reisen.png'; charImages.gojou.src = 'gojou.png';
+let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
 
-// セーブデータ初期値 (charRanksで各キャラの凸数を管理 最大10)
+// セーブデータ初期値
 let saveData = { 
     gold: 0, 
     upAtk: 0, 
     upHp: 0, 
     unlockedChars: ['reimu'], 
-    charRanks: { reimu: 0, marisa: 0, youmu: 0, sakuya: 0, reisen: 0 },
+    charRanks: { reimu: 0, marisa: 0, youmu: 0, sakuya: 0, reisen: 0, gojou: 0 },
     volBgm: 0.7, 
     volSE: 0.7 
 };
@@ -532,7 +549,8 @@ function loadGame() {
     const saved = localStorage.getItem('touhou_survivors_save_v6');
     if (saved) { try { saveData = Object.assign(saveData, JSON.parse(saved)); } catch(e) {} }
     if (!saveData.unlockedChars) saveData.unlockedChars = ['reimu'];
-    if (!saveData.charRanks) saveData.charRanks = { reimu: 0, marisa: 0, youmu: 0, sakuya: 0, reisen: 0 };
+    if (!saveData.charRanks) saveData.charRanks = { reimu: 0, marisa: 0, youmu: 0, sakuya: 0, reisen: 0, gojou: 0 };
+    if (saveData.charRanks.gojou === undefined) saveData.charRanks.gojou = 0;
     if (saveData.volBgm === undefined) saveData.volBgm = 0.7;
     if (saveData.volSE === undefined) saveData.volSE = 0.7;
     
@@ -562,7 +580,6 @@ function updateMenuUI() {
     document.getElementById('btn-up-hp').disabled = saveData.gold < getCost('hp', saveData.upHp);
     document.getElementById('btn-gacha').disabled = saveData.gold < 200;
     
-    // 選択中のキャラ名と凸情報を表示
     document.getElementById('selected-char-name').innerText = charNamesJp[selectedCharType];
     let currentRank = saveData.charRanks[selectedCharType] || 0;
     if (currentRank >= 10) {
@@ -571,8 +588,7 @@ function updateMenuUI() {
         document.getElementById('selected-char-status').innerText = `${currentRank}凸 (限界突破補正: 全ステ+${currentRank * 5}%)`;
     }
 
-    // 各キャラカードのUIバッジ・凸表記更新
-    ['reimu', 'marisa', 'youmu', 'sakuya', 'reisen'].forEach(c => {
+    ['reimu', 'marisa', 'youmu', 'sakuya', 'reisen', 'gojou'].forEach(c => {
         let rNode = document.getElementById(`rank-${c}`);
         let rankVal = saveData.charRanks[c] || 0;
         if (rNode) {
@@ -594,26 +610,22 @@ function drawGacha() {
     saveData.gold -= 200;
     createSynthSE('levelup'); 
     
-    // 全5キャラからランダム抽選
-    const pool = ['reimu', 'marisa', 'youmu', 'sakuya', 'reisen'];
+    const pool = ['reimu', 'marisa', 'youmu', 'sakuya', 'reisen', 'gojou'];
     const picked = pool[Math.floor(Math.random() * pool.length)];
     const resultDiv = document.getElementById('gacha-result');
 
     if (!saveData.unlockedChars.includes(picked)) {
-        // 新規解放
         saveData.unlockedChars.push(picked);
         saveData.charRanks[picked] = 0;
         resultDiv.style.color = "#2ed573"; 
         resultDiv.innerText = `🎉 新解放：${charNamesJp[picked]}`;
     } else {
-        // キャラ被り時の処理（最大10凸まで）
         let curRank = saveData.charRanks[picked] || 0;
         if (curRank < 10) {
             saveData.charRanks[picked] = curRank + 1;
             resultDiv.style.color = "#ffcc00";
             resultDiv.innerText = `💥 被り限界突破！：${charNamesJp[picked]} (★${curRank + 1}になりました！)`;
         } else {
-            // すでに10凸（完凸）している場合は救済POINT返還
             saveData.gold += 150;
             resultDiv.style.color = "#74b9ff";
             resultDiv.innerText = `👑 完凸済被り：${charNamesJp[picked]} (150🔴返還)`;
@@ -623,6 +635,7 @@ function drawGacha() {
     updateMenuUI();
 }
 
+permanentBuyPermanent = buyPermanent;
 function buyPermanent(type) {
     let cost = getCost(type, saveData[type === 'atk' ? 'upAtk' : 'upHp']);
     if (saveData.gold >= cost) {
@@ -655,6 +668,7 @@ let thunderTimer = 0;
 let reimuBarrierHp = 0, reimuBarrierMaxHp = 0, reimuBarrierCooldown = 0;
 let sakuyaDollKnives = [];
 let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
+let gojouShotToggle = false; // 蒼と赫の切り替えフラグ
 
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
 
@@ -705,6 +719,9 @@ function activateSpellCard() {
     } else if (player.type === 'reisen') {
         spellActiveTimer = 45; createParticles(player.x, player.y, '#a55eea', 50);
         enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < 350) { e.hp -= player.damage * 6; createParticles(e.x, e.y, '#fff', 6); } });
+    } else if (player.type === 'gojou') {
+        spellActiveTimer = 180; // 虚式「茈」の発射時間
+        marisaLaserDirection = player.lastDirX > 0 ? 1 : -1;
     }
 }
 
@@ -770,7 +787,8 @@ function getUpgradeOptions() {
             marisa: ['🧹 習得：ミニ八卦炉・暴走 (通常星弾が貫通化)', '🧹 強化：ミニ八卦炉・暴走 (貫通星弾が1.5倍超巨大化)'],
             youmu: ['🌸 習得：人魂「半分幻の庭師」 (半霊が自動追尾攻撃開始)', '🌸 強化：半霊「半分幻の庭師」 (半霊の追尾戦闘力2倍化)'],
             sakuya: ['⏳ 習得：殺人ドール (画面跳弾ナイフが永続巡回)', '⏳ 強化：殺人ドール (跳弾ナイフの巡回数が2倍に増加)'],
-            reisen: ['👁️ 習得：幻朧月睨 (狂気波動による全周囲斥力)', '👁️ 強化：幻朧月睨 (錯乱波のダメージと衝撃力が極大化)']
+            reisen: ['👁️ 習得：幻朧月睨 (狂気波動による全周囲斥力)', '👁️ 強化：幻朧月睨 (錯乱波のダメージと衝撃力が極大化)'],
+            gojou: ['🤞 習得：無下限呪術 (周囲の敵の移動速度を低下)', '🤞 強化：無下限呪術 (絶対不可侵領域の範囲が1.5倍に拡大)']
         };
         list.push({
             name: pNames[player.type][personalSkillLevel],
@@ -805,16 +823,15 @@ function startGame() {
     if (window.innerHeight > window.innerWidth) { canvas.width = 580; canvas.height = 960; } 
     else { canvas.width = 960; canvas.height = 580; }
 
-    player = { x: canvas.width/2, y: canvas.height/2, size: 32, shootCooldown: 0, multishot: 1, magnetRange: 140, type: selectedCharType, animTimer: 0, lastDirX: 1, isMoving: false };
+    player = { x: canvas.width/2, y: canvas.height/2, size: 34, shootCooldown: 0, multishot: 1, magnetRange: 140, type: selectedCharType, animTimer: 0, lastDirX: 1, isMoving: false };
 
-    // 各キャラのベース性能
     if (selectedCharType === 'reimu') { player.maxHp = 100; player.damage = 16; player.speed = 4.3; player.attackSpeed = 1.4; }
     else if (selectedCharType === 'marisa') { player.maxHp = 85; player.damage = 22; player.speed = 5.2; player.attackSpeed = 1.8; }
     else if (selectedCharType === 'youmu') { player.maxHp = 120; player.damage = 18; player.speed = 4.6; player.attackSpeed = 1.5; }
     else if (selectedCharType === 'sakuya') { player.maxHp = 95; player.damage = 15; player.speed = 4.8; player.attackSpeed = 2.2; } 
     else if (selectedCharType === 'reisen') { player.maxHp = 110; player.damage = 20; player.speed = 4.2; player.attackSpeed = 1.3; }
+    else if (selectedCharType === 'gojou') { player.maxHp = 130; player.damage = 24; player.speed = 4.5; player.attackSpeed = 1.5; }
 
-    // 📈 限界突破（凸）システムによるステータスアップ倍率の計算 (1凸ごとに+5% 永続強化)
     let rankCount = saveData.charRanks[selectedCharType] || 0;
     let rankMultiplier = 1.0 + (rankCount * 0.05);
 
@@ -822,14 +839,13 @@ function startGame() {
     player.damage = Math.round(player.damage * rankMultiplier);
     player.speed = player.speed * rankMultiplier;
 
-    // ショップの永続強化を加算
     player.maxHp += (saveData.upHp * 25); player.damage += (saveData.upAtk * 4);
     
     player.hp = player.maxHp; score = 0; level = 1; exp = 0; nextExp = 5; surviveTime = 0; goldEarned = 0;
     bullets = []; enemies = []; gems = []; particles = []; spawnTimer = 0; spellCooldown = 0; spellActiveTimer = 0;
     sakuyaTimeStopActive = false; subWeapons = { garlic: 0, book: 0, thunder: 0 }; personalSkillLevel = 0; thunderTimer = 0;
     sakuyaDollKnives = []; youmuHalfGhost = { x: player.x, y: player.y, angle: 0, attackCooldown: 0 };
-    reimuBarrierHp = 0; reimuBarrierMaxHp = 0; reimuBarrierCooldown = 0;
+    reimuBarrierHp = 0; reimuBarrierMaxHp = 0; reimuBarrierCooldown = 0; gojouShotToggle = false;
 
     gameActive = true; 
     updateLoop();
@@ -847,6 +863,16 @@ function updateLoop() {
     if (player.type === 'reimu' && personalSkillLevel > 0 && reimuBarrierHp <= 0) {
         reimuBarrierCooldown--;
         if (reimuBarrierCooldown <= 0) { reimuBarrierHp = reimuBarrierMaxHp; createParticles(player.x, player.y, '#ff4757', 15); }
+    }
+
+    // 五条悟「無下限呪術」常時デバフ展開
+    if (player.type === 'gojou' && personalSkillLevel > 0) {
+        let mukagenRadius = personalSkillLevel === 1 ? 130 : 200;
+        enemies.forEach(e => {
+            if (Math.hypot(e.x - player.x, e.y - player.y) < mukagenRadius) {
+                e.x -= ((player.x - e.x) / Math.hypot(e.x - player.x, e.y - player.y)) * (e.speed * 0.6); // 敵を引き剥がす/鈍化
+            }
+        });
     }
 
     let dx = 0, dy = 0;
@@ -952,7 +978,7 @@ function updateLoop() {
     if (player.shootCooldown <= 0 && enemies.length > 0) {
         player.shootCooldown = 60 / player.attackSpeed;
         let target = enemies[0]; let minDist = Math.hypot(enemies[0].x - player.x, enemies[0].y - player.y);
-        for (let i = 1; i < enemies.length; i++) { let d = Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y); if (d < minDist) { minDist = d; target = enemies[i]; } }
+        for (let i = 1; i < enemies.length; i++) { let d = Math.hypot(enemies[i].x - player.x, e.y - player.y); if (d < minDist) { minDist = d; target = enemies[i]; } }
         let baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
         createSynthSE('shoot');
 
@@ -981,6 +1007,14 @@ function updateLoop() {
                 let offset = (i - (player.multishot-1)/2) * 12;
                 bullets.push({ x: player.x + offset, y: player.y, vx: player.lastDirX * 14, vy: 0, damage: player.damage * 1.1, type: '座薬', size: 20 });
                 bullets.push({ x: player.x - offset, y: player.y, vx: -player.lastDirX * 14, vy: 0, damage: player.damage * 0.7, type: '座薬', size: 20 });
+            }
+        } else if (player.type === 'gojou') {
+            // 蒼(吸い寄せ)と赫(吹き飛ばし)を交互に放つ
+            gojouShotToggle = !gojouShotToggle;
+            let bType = gojouShotToggle ? 'blue_ao' : 'red_aka';
+            for (let i = 0; i < player.multishot; i++) {
+                let angle = baseAngle + (i - (player.multishot-1)/2) * 0.18;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 13, vy: Math.sin(angle) * 13, damage: player.damage * 1.2, type: bType, size: 22 });
             }
         }
     } else { player.shootCooldown--; }
@@ -1016,6 +1050,18 @@ function updateLoop() {
             }
             enemies.push({ x: player.x + Math.cos(angle) * 600, y: player.y + Math.sin(angle) * 600, size: size, hp: hp, maxHp: hp, speed: speed, isBoss: isBoss, color: color, damageMultiplier: difficultyCurve });
         }
+    }
+
+    // 🔴 五条悟 スペカ：虚式「茈」のヒット判定
+    if (player.type === 'gojou' && spellActiveTimer > 0) {
+        let beamHeight = 160, beamWidth = 960;
+        let beamLeft = marisaLaserDirection > 0 ? player.x : player.x - beamWidth; let beamTop = player.y - beamHeight / 2;
+        enemies.forEach(enemy => {
+            if (enemy.x + enemy.size/2 > beamLeft && enemy.x - enemy.size/2 < beamLeft + beamWidth && enemy.y + enemy.size/2 > beamTop && enemy.y - enemy.size/2 < beamTop + beamHeight) {
+                enemy.hp -= player.damage * 1.5; createParticles(enemy.x, enemy.y, '#a55eea', 2);
+                if (player.animTimer % 4 === 0) createSynthSE('hit');
+            }
+        });
     }
 
     if (player.type === 'marisa' && spellActiveTimer > 0) {
@@ -1063,6 +1109,16 @@ function updateLoop() {
             const b = bullets[bIndex];
             if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < (enemy.size * 0.5 + b.size * 0.5)) {
                 enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); createSynthSE('hit');
+                
+                // 蒼(吸い寄せ)・赫(吹き飛ばし)の効果を敵に適用
+                if (b.type === 'blue_ao') {
+                    let pAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                    enemy.x += Math.cos(pAngle) * 35; enemy.y += Math.sin(pAngle) * 35;
+                } else if (b.type === 'red_aka') {
+                    let pAngle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                    enemy.x += Math.cos(pAngle) * 60; enemy.y += Math.sin(pAngle) * 60;
+                }
+
                 if (b.type !== 'slash' && b.type !== 'book' && !b.penetrate) bullets.splice(bIndex, 1);
             }
         }
@@ -1105,6 +1161,15 @@ function draw() {
         ctx.fillStyle = `rgba(255, 71, 87, ${alpha * 0.1})`; ctx.fill(); ctx.restore();
     }
 
+    // 五条悟「無下限呪術」視覚エフェクト
+    if (player.type === 'gojou' && personalSkillLevel > 0) {
+        ctx.save(); let mukagenR = personalSkillLevel === 1 ? 130 : 200;
+        ctx.strokeStyle = 'rgba(116, 185, 255, 0.25)'; ctx.lineWidth = 2;
+        ctx.setLineDash([4, 12]); ctx.beginPath();
+        ctx.arc(player.x - camera.x, player.y - camera.y, mukagenR, player.animTimer * 0.01, player.animTimer * 0.01 + Math.PI * 2);
+        ctx.stroke(); ctx.restore();
+    }
+
     if (subWeapons.garlic > 0) {
         ctx.save(); let radius = 50 + subWeapons.garlic * 15;
         let grad = ctx.createRadialGradient(player.x - camera.x, player.y - camera.y, radius*0.5, player.x - camera.x, player.y - camera.y, radius);
@@ -1125,6 +1190,8 @@ function draw() {
         else if (b.type === 'star') { ctx.fillStyle = '#f1c40f'; ctx.font = `bold ${b.size + 4}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('★', 0, 0); } 
         else if (b.type === 'knife' || b.type === 'doll_knife') { ctx.fillStyle = '#dcdde1'; ctx.strokeStyle = '#7f8c8d'; ctx.lineWidth = 1; ctx.fillRect(-2, -7, 4, 14); ctx.strokeRect(-2, -7, 4, 14); }
         else if (b.type === '座薬') { ctx.fillStyle = '#ff4757'; ctx.beginPath(); ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI*2); ctx.fill(); }
+        else if (b.type === 'blue_ao') { ctx.fillStyle = '#2475ff'; ctx.shadowBlur = 8; ctx.shadowColor = '#00a8ff'; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); }
+        else if (b.type === 'red_aka') { ctx.fillStyle = '#ff214f'; ctx.shadowBlur = 8; ctx.shadowColor = '#ff4757'; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); }
         else if (b.type === 'book') { ctx.fillStyle = '#9b59b6'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.fillRect(-8, -10, 16, 20); ctx.fillStyle = '#fff'; ctx.fillRect(2, -10, 2, 20); }
         else if (b.type === 'slash') { let grad = ctx.createRadialGradient(0,0,2, 0,0,b.size/2); grad.addColorStop(0, '#fff'); grad.addColorStop(0.5, '#2ed573'); grad.addColorStop(1, 'rgba(46,213,115,0)'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, b.size/2, 0, Math.PI*2); ctx.fill(); }
         else if (b.type === 'ghost_wave') { ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.strokeStyle = '#2ed573'; ctx.beginPath(); ctx.arc(0,0, b.size/2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
@@ -1138,11 +1205,20 @@ function draw() {
         });
     }
 
+    // 五条悟 スペカ：虚式「茈」極太消滅光線
+    if (player.type === 'gojou' && spellActiveTimer > 0) {
+        ctx.save(); let bHeight = 160 + Math.sin(player.animTimer * 0.6) * 20, bWidth = 960;
+        let bX = marisaLaserDirection > 0 ? player.x - camera.x : player.x - camera.x - bWidth; let bY = player.y - camera.y - bHeight / 2;
+        let grad = ctx.createLinearGradient(0, bY, 0, bY + bHeight);
+        grad.addColorStop(0, 'rgba(155, 89, 182, 0)'); grad.addColorStop(0.2, '#9b59b6'); grad.addColorStop(0.5, '#fff'); grad.addColorStop(0.8, '#8e44ad'); grad.addColorStop(1, 'rgba(155, 89, 182, 0)');
+        ctx.fillStyle = grad; ctx.fillRect(bX, bY, bWidth, bHeight); ctx.restore();
+    }
+
     if (player.type === 'marisa' && spellActiveTimer > 0) {
-        ctx.save(); let lHeight = 110 + Math.sin(player.animTimer * 0.4) * 15, lWidth = 960;
-        let lX = marisaLaserDirection > 0 ? player.x - camera.x : player.x - camera.x - lWidth; let lY = player.y - camera.y - lHeight / 2;
+        ctx.save(); let lHeight = 110 + Math.sin(player.animTimer * 0.12) * 2;
+        let lX = marisaLaserDirection > 0 ? player.x - camera.x : player.x - camera.x - 900; let lY = player.y - camera.y - lHeight / 2;
         let grad = ctx.createLinearGradient(0, lY, 0, lY + lHeight); grad.addColorStop(0, 'rgba(255, 159, 67, 0)'); grad.addColorStop(0.2, '#ff9f43'); grad.addColorStop(0.5, '#fff'); grad.addColorStop(0.8, '#f1c40f'); grad.addColorStop(1, 'rgba(255, 159, 67, 0)');
-        ctx.fillStyle = grad; ctx.fillRect(lX, lY, lWidth, lHeight); ctx.fillStyle = '#ffffff'; ctx.fillRect(lX, lY + lHeight*0.35, lWidth, lHeight*0.3); ctx.restore();
+        ctx.fillStyle = grad; ctx.fillRect(lX, lY, 900, lHeight); ctx.fillStyle = '#ffffff'; ctx.fillRect(lX, lY + lHeight*0.35, 900, lHeight*0.3); ctx.restore();
     }
     
     enemies.forEach(enemy => { 
@@ -1163,7 +1239,7 @@ function draw() {
     
     if (imageLoaded[player.type]) { ctx.imageSmoothingEnabled = false; ctx.drawImage(charImages[player.type], -player.size/2, -player.size/2 + bob, player.size, player.size); } 
     else { 
-        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea' };
+        let colors = { reimu: '#ff4d4d', marisa: '#f1c40f', youmu: '#2ed573', sakuya: '#74b9ff', reisen: '#a55eea', gojou: '#ffffff' };
         ctx.fillStyle = colors[player.type]; ctx.beginPath(); ctx.arc(0, bob, player.size/2, 0, Math.PI*2); ctx.fill(); 
     }
     ctx.restore(); ctx.globalAlpha = 1.0;
