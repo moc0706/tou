@@ -48,7 +48,6 @@
             box-sizing: border-box;
         }
 
-        /* 📊 メインメニュー */
         .menu-window {
             background: rgba(15, 15, 25, 0.96);
             border: 3px solid #ff4757;
@@ -63,7 +62,6 @@
             overflow-y: auto;
         }
 
-        /* 📦 2×2のグリッド配置 */
         .menu-layout {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -115,7 +113,6 @@
         .btn:disabled { border-color: #444; color: #666; background: #111; cursor: not-allowed; }
         .grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
         
-        /* キャラ選択用のカード */
         .card { 
             border: 2px solid #2f3542; 
             padding: 10px; 
@@ -187,7 +184,6 @@
         }
         .volume-val { width: 35px; text-align: right; color: #ffcc00; font-weight: bold; }
 
-        /* メインメニュー内の各セクション共通デザイン */
         .menu-section {
             background: #11121a;
             border: 2px solid #2f3542;
@@ -208,16 +204,12 @@
 </head>
 <body>
 
-    <!-- メインメニュー -->
     <div id="mainMenu" class="menu-window">
         <h1 style="color:#ff4757; margin: 0; font-size: 24px; letter-spacing: 1px;">☯️ 東方生存郷 ☯️</h1>
         <p style="font-size: 13px; color: #a4b0be; margin: 2px 0 10px 0; font-style: italic;">~ Border of Survivors</p>
         <p style="margin: 5px 0; font-size: 16px;">所持POINT: <span id="menuGold" class="p-text">0</span> 🔴</p>
         
-        <!-- 📦 ここから2×2グリッドレイアウト -->
         <div class="menu-layout">
-            
-            <!-- ① ガチャ -->
             <div class="menu-section" style="border-color: #ffcc00; background: rgba(255,204,0,0.03); display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h4 class="section-title">⛩️ 博麗神社 賽銭箱ガチャ</h4>
@@ -229,7 +221,6 @@
                 </div>
             </div>
 
-            <!-- ② キャラクター選択 -->
             <div class="menu-section" style="display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h4 class="section-title" style="color: #74b9ff;">👥 出撃キャラクター</h4>
@@ -244,7 +235,6 @@
                 </div>
             </div>
 
-            <!-- ③ 能力解放 -->
             <div class="menu-section">
                 <h4 class="section-title" style="color: #2ed573;">🔮 能力解放（永続強化）</h4>
                 <div style="font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
@@ -259,7 +249,6 @@
                 </div>
             </div>
 
-            <!-- ④ 音量設定 -->
             <div class="menu-section" style="display: flex; flex-direction: column; justify-content: center;">
                 <h4 class="section-title" style="color: #a4b0be; margin-bottom: 12px;">⚙️ 音量設定</h4>
                 <div class="volume-container" style="border: none; padding: 0;">
@@ -275,14 +264,11 @@
                     </div>
                 </div>
             </div>
-
         </div>
-        <!-- 📦 レイアウトここまで -->
 
         <button class="btn" style="font-size:18px; margin-top:20px; width:100%; background:#ff4757; color:#fff; box-shadow: 0 4px 15px rgba(255,71,87,0.3);" onclick="startGame()">異変解決へ向かう</button>
     </div>
 
-    <!-- キャラクター一覧モーダル画面 -->
     <div id="charModal" class="modal-layer">
         <div class="menu-window" style="border-color: #74b9ff; max-width: 420px;">
             <h3 style="color:#74b9ff; margin-top:0;">⛩️ 参戦キャラクター一覧</h3>
@@ -312,7 +298,6 @@
                     <h4 style="color:#a55eea; margin:2px 0;">鈴仙・優曇華院 <span id="rank-reisen" class="rank-badge"></span></h4>
                     <p style="font-size:11px; color:#a4b0be; margin:2px 0;">前後貫通レーザー / 💥赤眼催眠(周囲超爆発)</p>
                 </div>
-                <!-- 🤞 新規追加キャラ: 五条悟 -->
                 <div class="card locked" id="char-gojou" onclick="selectChar('gojou')">
                     <span class="lock-badge" id="badge-gojou">🔒 未解放</span>
                     <h4 style="color:#ffffff; text-shadow: 0 0 5px #74b9ff; margin:2px 0;">五条 悟 <span id="rank-gojou" class="rank-badge"></span></h4>
@@ -323,7 +308,6 @@
         </div>
     </div>
 
-    <!-- ゲームプレイ画面 -->
     <div id="gameContainer" class="canvas-container">
         <canvas id="gameCanvas" width="960" height="580"></canvas>
         <div id="touch-overlay"></div>
@@ -331,7 +315,6 @@
         <button id="bomb-btn" onclick="activateSpellCard()"><div>スペカ</div><div id="bomb-cooldown" style="font-size:10px;">READY</div></button>
     </div>
     
-    <!-- ポーズ/レベルアップ用UI -->
     <div id="ui-layer">
         <h2 id="ui-title" style="color:#ff4757; margin-top:0; font-size: 20px;">能力開花</h2>
         <div id="ui-options" style="display:flex; flex-direction:column; width:100%;"></div>
@@ -360,7 +343,6 @@ charImages.reimu.src = 'reimu.png'; charImages.marisa.src = 'marisa.png'; charIm
 let imageLoaded = { reimu: false, marisa: false, youmu: false, sakuya: false, reisen: false, gojou: false };
 Object.keys(charImages).forEach(k => charImages[k].onload = () => imageLoaded[k] = true);
 
-// セーブデータ初期値
 let saveData = { 
     gold: 0, 
     upAtk: 0, 
@@ -371,7 +353,7 @@ let saveData = {
     volSE: 0.7 
 };
 
-// --- 🎧 オーディオエンジン ---
+// --- オーディオエンジン ---
 let audioCtx = null;
 let bgmAudioElement = null;
 let bgmSourceNode = null;
@@ -635,7 +617,6 @@ function drawGacha() {
     updateMenuUI();
 }
 
-permanentBuyPermanent = buyPermanent;
 function buyPermanent(type) {
     let cost = getCost(type, saveData[type === 'atk' ? 'upAtk' : 'upHp']);
     if (saveData.gold >= cost) {
@@ -655,7 +636,7 @@ function selectChar(type) {
     updateMenuUI();
 }
 
-// --- ゲームシステム変数 ---
+// --- ゲームループ変数 ---
 let gameActive = false, score = 0, level = 1, exp = 0, nextExp = 5, surviveTime = 0, goldEarned = 0;
 const camera = { x: 0, y: 0 };
 let player = {}, bullets = [], enemies = [], gems = [], particles = [], spawnTimer = 0;
@@ -668,14 +649,12 @@ let thunderTimer = 0;
 let reimuBarrierHp = 0, reimuBarrierMaxHp = 0, reimuBarrierCooldown = 0;
 let sakuyaDollKnives = [];
 let youmuHalfGhost = { x: 0, y: 0, angle: 0, attackCooldown: 0 };
-let gojouShotToggle = false; // 蒼と赫の切り替えフラグ
+let gojouShotToggle = false; 
 
 let touchStart = { x: 0, y: 0 }, touchCurrent = { x: 0, y: 0 }, isTouching = false, touchMoveVector = { x: 0, y: 0 };
 
 window.addEventListener('click', () => {
-    if (!gameActive) {
-        initAudio();
-    }
+    if (!gameActive) { initAudio(); }
 });
 
 touchOverlay.addEventListener('touchstart', e => {
@@ -692,9 +671,8 @@ window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
     if (e.key === 'Escape' || e.key === 'Esc') {
         e.preventDefault();
-        if (gameActive) {
-            triggerPause();
-        } else if (uiLayer.style.display === 'flex' && uiTitle.innerText === "戦術一時停止") {
+        if (gameActive) { triggerPause(); } 
+        else if (uiLayer.style.display === 'flex' && uiTitle.innerText === "戦術一時停止") {
             createSynthSE('click'); uiLayer.style.display = 'none'; gameActive = true; updateLoop();
         }
     }
@@ -720,7 +698,7 @@ function activateSpellCard() {
         spellActiveTimer = 45; createParticles(player.x, player.y, '#a55eea', 50);
         enemies.forEach(e => { if (Math.hypot(e.x - player.x, e.y - player.y) < 350) { e.hp -= player.damage * 6; createParticles(e.x, e.y, '#fff', 6); } });
     } else if (player.type === 'gojou') {
-        spellActiveTimer = 180; // 虚式「茈」の発射時間
+        spellActiveTimer = 180; 
         marisaLaserDirection = player.lastDirX > 0 ? 1 : -1;
     }
 }
@@ -865,12 +843,15 @@ function updateLoop() {
         if (reimuBarrierCooldown <= 0) { reimuBarrierHp = reimuBarrierMaxHp; createParticles(player.x, player.y, '#ff4757', 15); }
     }
 
-    // 五条悟「無下限呪術」常時デバフ展開
+    // 五条悟「無下限呪術」常時デバフ展開のフリーズバグ修正（ゼロ除算対策）
     if (player.type === 'gojou' && personalSkillLevel > 0) {
         let mukagenRadius = personalSkillLevel === 1 ? 130 : 200;
         enemies.forEach(e => {
-            if (Math.hypot(e.x - player.x, e.y - player.y) < mukagenRadius) {
-                e.x -= ((player.x - e.x) / Math.hypot(e.x - player.x, e.y - player.y)) * (e.speed * 0.6); // 敵を引き剥がす/鈍化
+            let dist = Math.hypot(e.x - player.x, e.y - player.y);
+            if (dist < mukagenRadius && dist > 0.1) {
+                // 敵を少し遠ざける
+                e.x -= ((player.x - e.x) / dist) * (e.speed * 0.6);
+                e.y -= ((player.y - e.y) / dist) * (e.speed * 0.6);
             }
         });
     }
@@ -978,7 +959,7 @@ function updateLoop() {
     if (player.shootCooldown <= 0 && enemies.length > 0) {
         player.shootCooldown = 60 / player.attackSpeed;
         let target = enemies[0]; let minDist = Math.hypot(enemies[0].x - player.x, enemies[0].y - player.y);
-        for (let i = 1; i < enemies.length; i++) { let d = Math.hypot(enemies[i].x - player.x, e.y - player.y); if (d < minDist) { minDist = d; target = enemies[i]; } }
+        for (let i = 1; i < enemies.length; i++) { let d = Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y); if (d < minDist) { minDist = d; target = enemies[i]; } }
         let baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
         createSynthSE('shoot');
 
@@ -1009,7 +990,6 @@ function updateLoop() {
                 bullets.push({ x: player.x - offset, y: player.y, vx: -player.lastDirX * 14, vy: 0, damage: player.damage * 0.7, type: '座薬', size: 20 });
             }
         } else if (player.type === 'gojou') {
-            // 蒼(吸い寄せ)と赫(吹き飛ばし)を交互に放つ
             gojouShotToggle = !gojouShotToggle;
             let bType = gojouShotToggle ? 'blue_ao' : 'red_aka';
             for (let i = 0; i < player.multishot; i++) {
@@ -1052,7 +1032,7 @@ function updateLoop() {
         }
     }
 
-    // 🔴 五条悟 スペカ：虚式「茈」のヒット判定
+    // 五条悟「虚式 茈」のバグ修正
     if (player.type === 'gojou' && spellActiveTimer > 0) {
         let beamHeight = 160, beamWidth = 960;
         let beamLeft = marisaLaserDirection > 0 ? player.x : player.x - beamWidth; let beamTop = player.y - beamHeight / 2;
@@ -1075,6 +1055,7 @@ function updateLoop() {
         });
     }
 
+    // フリーズの主要因だったタイポの修正 (e.y - player.y の未定義参照)
     for (let eIndex = enemies.length - 1; eIndex >= 0; eIndex--) {
         const enemy = enemies[eIndex];
         if (player.type === 'reimu' && personalSkillLevel > 0 && reimuBarrierHp > 0) {
@@ -1110,13 +1091,16 @@ function updateLoop() {
             if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < (enemy.size * 0.5 + b.size * 0.5)) {
                 enemy.hp -= b.damage; createParticles(enemy.x, enemy.y, '#54a0ff', 2); createSynthSE('hit');
                 
-                // 蒼(吸い寄せ)・赫(吹き飛ばし)の効果を敵に適用
-                if (b.type === 'blue_ao') {
-                    let pAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-                    enemy.x += Math.cos(pAngle) * 35; enemy.y += Math.sin(pAngle) * 35;
-                } else if (b.type === 'red_aka') {
-                    let pAngle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-                    enemy.x += Math.cos(pAngle) * 60; enemy.y += Math.sin(pAngle) * 60;
+                // 蒼・赫の効果適用バグ修正（ゼロ除算防止）
+                let pDist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+                if (pDist > 0.1) {
+                    if (b.type === 'blue_ao') {
+                        let pAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                        enemy.x += Math.cos(pAngle) * 35; enemy.y += Math.sin(pAngle) * 35;
+                    } else if (b.type === 'red_aka') {
+                        let pAngle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                        enemy.x += Math.cos(pAngle) * 60; enemy.y += Math.sin(pAngle) * 60;
+                    }
                 }
 
                 if (b.type !== 'slash' && b.type !== 'book' && !b.penetrate) bullets.splice(bIndex, 1);
@@ -1140,7 +1124,7 @@ function updateLoop() {
         }
     }
 
-    for (let i = particles.length - 1; i >= 0; i--) { p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.05; if (p.alpha <= 0) particles.splice(i, 1); }
+    for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.05; if (p.alpha <= 0) particles.splice(i, 1); }
     draw(); requestAnimationFrame(updateLoop);
 }
 
@@ -1161,7 +1145,6 @@ function draw() {
         ctx.fillStyle = `rgba(255, 71, 87, ${alpha * 0.1})`; ctx.fill(); ctx.restore();
     }
 
-    // 五条悟「無下限呪術」視覚エフェクト
     if (player.type === 'gojou' && personalSkillLevel > 0) {
         ctx.save(); let mukagenR = personalSkillLevel === 1 ? 130 : 200;
         ctx.strokeStyle = 'rgba(116, 185, 255, 0.25)'; ctx.lineWidth = 2;
@@ -1205,7 +1188,6 @@ function draw() {
         });
     }
 
-    // 五条悟 スペカ：虚式「茈」極太消滅光線
     if (player.type === 'gojou' && spellActiveTimer > 0) {
         ctx.save(); let bHeight = 160 + Math.sin(player.animTimer * 0.6) * 20, bWidth = 960;
         let bX = marisaLaserDirection > 0 ? player.x - camera.x : player.x - camera.x - bWidth; let bY = player.y - camera.y - bHeight / 2;
